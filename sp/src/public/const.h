@@ -357,7 +357,6 @@ enum RenderMode_t
 	kRenderTransAlphaAdd,	// src + dest*(1-a)
 	kRenderWorldGlow,		// Same as kRenderGlow but not fixed size in screen space
 	kRenderNone,			// Don't render.
-
 	kRenderModeCount,		// must be last
 };
 
@@ -412,7 +411,6 @@ enum Collision_Group_t
 	COLLISION_GROUP_PASSABLE_DOOR,	// Doors that the player shouldn't collide with
 	COLLISION_GROUP_DISSOLVING,		// Things that are dissolving are in this group
 	COLLISION_GROUP_PUSHAWAY,		// Nonsolid on client and server, pushaway in player code
-
 	COLLISION_GROUP_NPC_ACTOR,		// Used so NPCs in scripts ignore the player.
 	COLLISION_GROUP_NPC_SCRIPTED,	// USed for NPCs in scripts that should not collide with each other
 

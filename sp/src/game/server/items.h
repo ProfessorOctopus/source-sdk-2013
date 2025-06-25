@@ -16,7 +16,6 @@
 #include "player_pickup.h"
 #include "vphysics/constraints.h"
 
-
 // Armor given by a battery
 #define MAX_NORMAL_BATTERY	100
 
@@ -42,10 +41,8 @@
 #define SF_ITEM_NO_PLAYER_PICKUP	(1<<1)
 #define SF_ITEM_NO_PHYSCANNON_PUNT (1<<2)
 #define SF_ITEM_NO_NPC_PICKUP	(1<<3)
-
 #define SF_ITEM_ALWAYS_TOUCHABLE	(1<<6) // This needs to stay synced with the weapon spawnflag
 #endif
-
 
 class CItem : public CBaseAnimating, public CDefaultPlayerPickupVPhysics
 {
@@ -56,9 +53,6 @@ public:
 
 	virtual void Spawn( void );
 	virtual void Precache();
-
-	unsigned int PhysicsSolidMaskForEntity( void ) const;
-
 	virtual CBaseEntity* Respawn( void );
 	virtual void ItemTouch( CBaseEntity *pOther );
 	virtual void Materialize( void );
@@ -80,8 +74,15 @@ public:
 	QAngle	GetOriginalSpawnAngles( void ) { return m_vOriginalSpawnAngles;	}
 	void	SetOriginalSpawnOrigin( const Vector& origin ) { m_vOriginalSpawnOrigin = origin; }
 	void	SetOriginalSpawnAngles( const QAngle& angles ) { m_vOriginalSpawnAngles = angles; }
-	bool	CreateItemVPhysicsObject( void );
+	bool CreateVPhysics();
+
 	virtual bool	ItemCanBeTouchedByPlayer( CBasePlayer *pPlayer );
+
+	//For MUNTED
+	COutputEvent	m_OnCollected;
+	COutputEvent	m_OnPickedUp;
+	string_t m_PickupSnd;	// Path/filename of WAV file to play.
+	float	m_flPickUpAmount;
 
 #if defined( HL2MP ) || defined( TF_DLL )
 	void	FallThink( void );
@@ -89,13 +90,12 @@ public:
 #endif
 
 #ifdef MAPBASE
-	// This appeared to have no prior use in Source SDK 2013.
-	// It may have been originally intended for TF2 or some other game-specific item class.
-	virtual bool IsCombatItem() const { return true; }
-
 	// Used to access item_healthkit values, etc. from outside of the class
 	virtual float GetItemAmount() { return 1.0f; }
 
+	// This appeared to have no prior use in Source SDK 2013.
+	// It may have been originally intended for TF2 or some other game-specific item class.
+	virtual bool IsCombatItem() const { return true; }
 	void	InputEnablePlayerPickup( inputdata_t &inputdata );
 	void	InputDisablePlayerPickup( inputdata_t &inputdata );
 	void	InputEnableNPCPickup( inputdata_t &inputdata );
@@ -109,7 +109,6 @@ protected:
 
 private:
 	bool		m_bActivateWhenAtRest;
-	COutputEvent m_OnPlayerTouch;
 	COutputEvent m_OnCacheInteraction;
 	
 	Vector		m_vOriginalSpawnOrigin;

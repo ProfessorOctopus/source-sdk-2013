@@ -333,7 +333,8 @@ public:
 
 	virtual void			PreThink( void );
 	virtual void			PostThink( void );
-	virtual int				TakeHealth( float flHealth, int bitsDamageType );
+	virtual int				TakeHealth(float flHealth, int bitsDamageType );
+	virtual int				ApplyArmour(float flArmour);
 	virtual void			TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 	bool					ShouldTakeDamageInCommentaryMode( const CTakeDamageInfo &inputInfo );
 	virtual int				OnTakeDamage( const CTakeDamageInfo &info );

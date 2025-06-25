@@ -1005,9 +1005,42 @@ void CBasePlayer::DeathSound( const CTakeDamageInfo &info )
 	}
 }
 
+int CBasePlayer::ApplyArmour(float flArmour)
+{
+	extern ConVar sk_battery;
+
+	const float MAX_NORMAL_BATTERY = 100;
+	if ((ArmorValue() < MAX_NORMAL_BATTERY) && IsSuitEquipped())
+	{
+		IncrementArmorValue(sk_battery.GetFloat(), MAX_NORMAL_BATTERY);
+
+		CPASAttenuationFilter filter(this, "ItemBattery.Touch");
+		EmitSound(filter, entindex(), "ItemBattery.Touch");
+
+		CSingleUserRecipientFilter user(this);
+		user.MakeReliable();
+
+		UserMessageBegin(user, "ItemPickup");
+		WRITE_STRING("item_battery");
+		MessageEnd();
+
+		// Suit reports new power level
+		// For some reason this wasn't working in release build -- round it.
+		int pct;
+		char szcharge[64];
+		pct = (int)((float)(ArmorValue() * 100.0) * (1.0 / MAX_NORMAL_BATTERY) + 0.5);
+		pct = (pct / 5);
+		if (pct > 0)
+			pct--;
+		Q_snprintf(szcharge, sizeof(szcharge), "!HEV_%1dP", pct);
+
+		return true;
+	}
+	return false;
+}
+
 // override takehealth
 // bitsDamageType indicates type of damage healed. 
-
 int CBasePlayer::TakeHealth( float flHealth, int bitsDamageType )
 {
 	// clear out any damage types we healed.
@@ -5585,11 +5618,6 @@ void CBasePlayer::OnRestore( void )
 		g_pScriptVM->SetValue( "player", GetScriptInstance() );
 	}
 }
-
-/* void CBasePlayer::SetTeamName( const char *pTeamName )
-{
-	Q_strncpy( m_szTeamName, pTeamName, TEAM_NAME_LENGTH );
-} */
 
 void CBasePlayer::SetArmorValue( int value )
 {

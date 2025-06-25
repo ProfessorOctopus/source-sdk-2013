@@ -238,31 +238,27 @@ public:
 	// Called at the end of GameFrame (i.e. after all game logic has run this frame)
 	virtual void EndGameFrame( void );
 
-	virtual bool IsSkillLevel( int iLevel ) { return GetSkillLevel() == iLevel; }
+	virtual bool IsSkillLevel(int iLevel) { return GetSkillLevel() == iLevel; }
 	virtual int	GetSkillLevel() { return g_iSkillLevel; }
-#ifdef MAPBASE
-	virtual void OnSkillLevelChanged( int iNewLevel );
-#else
-	virtual void OnSkillLevelChanged( int iNewLevel ) {};
-#endif
-	virtual void SetSkillLevel( int iLevel )
+	virtual void OnSkillLevelChanged(int iNewLevel) {};
+	virtual void SetSkillLevel(int iLevel)
 	{
-		int oldLevel = g_iSkillLevel; 
+		int oldLevel = g_iSkillLevel;
 
-		if ( iLevel < 1 )
+		if (iLevel < 1)
 		{
 			iLevel = 1;
 		}
-		else if ( iLevel > 3 )
+		else if (iLevel > 3)
 		{
-			iLevel = 3; 
+			iLevel = 3;
 		}
 
 		g_iSkillLevel = iLevel;
 
-		if( g_iSkillLevel != oldLevel )
+		if (g_iSkillLevel != oldLevel)
 		{
-			OnSkillLevelChanged( g_iSkillLevel );
+			OnSkillLevelChanged(g_iSkillLevel);
 		}
 	}
 

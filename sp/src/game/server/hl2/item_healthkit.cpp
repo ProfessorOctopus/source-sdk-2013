@@ -218,7 +218,6 @@ public:
 };
 
 LINK_ENTITY_TO_CLASS( item_healthkit_custom, CHealthKitCustom );
-//PRECACHE_REGISTER(item_healthkit_custom);
 
 #ifdef MAPBASE
 BEGIN_DATADESC( CHealthKitCustom )
@@ -419,7 +418,6 @@ bool CWallHealth::CreateVPhysics(void)
 {
 	VPhysicsInitStatic();
 	return true;
-
 }
 
 //-----------------------------------------------------------------------------

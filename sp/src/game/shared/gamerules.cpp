@@ -284,28 +284,6 @@ bool CGameRules::IsSpawnPointValid( CBaseEntity *pSpot, CBasePlayer *pPlayer  )
 //=========================================================
 bool CGameRules::CanHavePlayerItem( CBasePlayer *pPlayer, CBaseCombatWeapon *pWeapon )
 {
-/*
-	if ( pWeapon->m_pszAmmo1 )
-	{
-		if ( !CanHaveAmmo( pPlayer, pWeapon->m_iPrimaryAmmoType ) )
-		{
-			// we can't carry anymore ammo for this gun. We can only 
-			// have the gun if we aren't already carrying one of this type
-			if ( pPlayer->Weapon_OwnsThisType( pWeapon ) )
-			{
-				return FALSE;
-			}
-		}
-	}
-	else
-	{
-		// weapon doesn't use ammo, don't take another if you already have it.
-		if ( pPlayer->Weapon_OwnsThisType( pWeapon ) )
-		{
-			return FALSE;
-		}
-	}
-*/
 	// note: will fall through to here if GetItemInfo doesn't fill the struct!
 	return TRUE;
 }
@@ -331,23 +309,10 @@ void CGameRules::RefreshSkillData ( bool forceUpdate )
 
 	SetSkillLevel( skill.IsValid() ? skill.GetInt() : 1 );
 
-#ifdef HL2_DLL
-	// HL2 current only uses one skill config file that represents MEDIUM skill level and
-	// synthesizes EASY and HARD. (sjb)
-	Q_snprintf( szExec,sizeof(szExec), "exec skill_manifest.cfg\n" );
-
-	engine->ServerCommand( szExec );
-	engine->ServerExecute();
-#else
-
-#if !defined( TF_DLL ) && !defined( DOD_DLL )
 	Q_snprintf( szExec,sizeof(szExec), "exec skill%d.cfg\n", GetSkillLevel() );
 
 	engine->ServerCommand( szExec );
 	engine->ServerExecute();
-#endif // TF_DLL && DOD_DLL
-
-#endif // HL2_DLL
 #endif // CLIENT_DLL
 }
 
@@ -667,30 +632,6 @@ void CGameRules::EndGameFrame( void )
 		ApplyMultiDamage();
 	}
 }
-
-#ifdef MAPBASE
-void CGameRules::OnSkillLevelChanged( int iNewLevel )
-{
-	variant_t varNewLevel;
-	varNewLevel.SetInt(iNewLevel);
-
-	// Iterate through all logic_skill entities and fire them
-	CBaseEntity *pEntity = gEntList.FindEntityByClassname(NULL, "logic_skill");
-	while (pEntity)
-	{
-		pEntity->AcceptInput("SkillLevelChanged", UTIL_GetLocalPlayer(), NULL, varNewLevel, 0);
-		pEntity = gEntList.FindEntityByClassname(pEntity, "logic_skill");
-	}
-
-	// Fire game event for difficulty level changed
-	IGameEvent *event = gameeventmanager->CreateEvent("skill_changed");
-	if (event)
-	{
-		event->SetInt("skill_level", iNewLevel);
-		gameeventmanager->FireEvent(event);
-	}
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // trace line rules

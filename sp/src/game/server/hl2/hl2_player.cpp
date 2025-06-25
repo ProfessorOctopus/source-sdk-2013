@@ -2531,49 +2531,6 @@ bool CHL2_Player::SuitPower_ShouldRecharge( void )
 	return true;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-ConVar	sk_battery( "sk_battery","0" );			
-
-bool CHL2_Player::ApplyBattery( float powerMultiplier )
-{
-	const float MAX_NORMAL_BATTERY = 100;
-	if ((ArmorValue() < MAX_NORMAL_BATTERY) && IsSuitEquipped())
-	{
-		int pct;
-		char szcharge[64];
-
-		IncrementArmorValue( sk_battery.GetFloat() * powerMultiplier, MAX_NORMAL_BATTERY );
-
-		CPASAttenuationFilter filter( this, "ItemBattery.Touch" );
-		EmitSound( filter, entindex(), "ItemBattery.Touch" );
-
-		CSingleUserRecipientFilter user( this );
-		user.MakeReliable();
-
-		UserMessageBegin( user, "ItemPickup" );
-			WRITE_STRING( "item_battery" );
-		MessageEnd();
-
-		
-		// Suit reports new power level
-		// For some reason this wasn't working in release build -- round it.
-		pct = (int)( (float)(ArmorValue() * 100.0) * (1.0/MAX_NORMAL_BATTERY) + 0.5);
-		pct = (pct / 5);
-		if (pct > 0)
-			pct--;
-	
-		Q_snprintf( szcharge,sizeof(szcharge),"!HEV_%1dP", pct );
-		
-		//UTIL_EmitSoundSuit(edict(), szcharge);
-		//SetSuitUpdate(szcharge, FALSE, SUIT_NEXT_IN_30SEC);
-		return true;		
-	}
-	return false;
-}
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 int CHL2_Player::FlashlightIsOn( void )
 {
 	return IsEffectActive( EF_DIMLIGHT );
@@ -3286,7 +3243,7 @@ int CHL2_Player::GiveAmmo( int nCount, int nAmmoIndex, bool bSuppressSound)
 //-----------------------------------------------------------------------------
 bool CHL2_Player::Weapon_CanUse( CBaseCombatWeapon *pWeapon )
 {
-#ifndef HL2MP	
+	/*#ifndef HL2MP
 #ifdef MAPBASE
 	if ( pWeapon->ClassMatches( "weapon_stunstick" ) )
 	{
@@ -3326,8 +3283,7 @@ bool CHL2_Player::Weapon_CanUse( CBaseCombatWeapon *pWeapon )
 		return false;
 	}
 #endif
-#endif
-
+#endif*/
 	return BaseClass::Weapon_CanUse( pWeapon );
 }
 

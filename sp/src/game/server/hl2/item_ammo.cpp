@@ -1,9 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose: The various ammo types for HL2	
-//
+// Purpose: The various Items	
 //=============================================================================//
-
 #include "cbase.h"
 #include "player.h"
 #include "gamerules.h"
@@ -11,14 +8,11 @@
 #include "ammodef.h"
 #include "eventlist.h"
 #include "npcevent.h"
-
-// memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+#include <props_shared.h>
 
-#ifdef MAPBASE
 // ========================================================================
 //	>> CItemAmmo
-// 
 // All ammo items now derive from this for multiplier purposes.
 // ========================================================================
 class CItemAmmo : public CItem
@@ -51,48 +45,89 @@ public:
 			else
 				flCount = -m_flAmmoMultiplier;
 		}
-
 		return pPlayer->GiveAmmo( flCount, iAmmoType, bSuppressSound );
 	}
-
 	void	InputSetAmmoMultiplier( inputdata_t &inputdata ) { m_flAmmoMultiplier = inputdata.value.Float(); }
-
 	float m_flAmmoMultiplier = 1.0f;
 };
 
-BEGIN_DATADESC( CItemAmmo )
-
-	DEFINE_KEYFIELD( m_flAmmoMultiplier,	FIELD_FLOAT, "AmmoMultiplier" ),
-
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetAmmoMultiplier", InputSetAmmoMultiplier ),
-
-END_DATADESC()
-
-// Almost all instances of CItem below are for declaring the base class, which is now CItemAmmo.
-// This is here so we don't have to #ifdef all of them.
 #define CItem CItemAmmo
 
-#else
-//---------------------------------------------------------
-// Applies ammo quantity scale.
-//---------------------------------------------------------
-int ITEM_GiveAmmo( CBasePlayer *pPlayer, float flCount, const char *pszAmmoName, bool bSuppressSound = false )
+BEGIN_DATADESC( CItemAmmo )
+	DEFINE_KEYFIELD(m_flPickUpAmount, FIELD_FLOAT, "itemval"),
+	DEFINE_KEYFIELD( m_flAmmoMultiplier,	FIELD_FLOAT, "AmmoMultiplier" ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetAmmoMultiplier", InputSetAmmoMultiplier ),
+END_DATADESC()
+
+class CItemBattery : public CItem
 {
-	int iAmmoType = GetAmmoDef()->Index(pszAmmoName);
-	if (iAmmoType == -1)
+public:
+	DECLARE_CLASS(CItemBattery, CItem);
+
+	void Spawn(void)
 	{
-		Msg("ERROR: Attempting to give unknown ammo type (%s)\n",pszAmmoName);
-		return 0;
+		Precache();
+		SetModel(DefaultOrCustomModel("models/items/battery.mdl"));
+		BaseClass::Spawn();
 	}
 
-	flCount *= g_pGameRules->GetAmmoQuantityScale(iAmmoType);
+	void Precache(void)
+	{
+		PrecacheModel(DefaultOrCustomModel("models/items/battery.mdl"));
+		PrecacheScriptSound("ItemBattery.Touch");
+		if (m_PickupSnd != NULL_STRING) { PrecacheScriptSound(STRING(m_PickupSnd)); }
+	}
 
-	// Don't give out less than 1 of anything.
-	flCount = MAX( 1.0f, flCount );
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
+	{
+		extern ConVar sk_battery;
+		CBasePlayer* pPlayer = static_cast<CBasePlayer*>(pActivator);
 
-	return pPlayer->GiveAmmo( flCount, iAmmoType, bSuppressSound );
-}
-#endif
+		if (pPlayer->ArmorValue() < MAX_NORMAL_BATTERY && pPlayer->IsSuitEquipped())// Player can pickup battery with suit.
+		{
+			CSingleUserRecipientFilter user(pPlayer);
+			user.MakeReliable();
+
+			// Set custom Armor Value in Hammer to whatever but if Value is 0 then use default Armor Value from Skill.cge
+			if (m_flPickUpAmount == 0) { pPlayer->IncrementArmorValue(sk_battery.GetFloat(), MAX_NORMAL_BATTERY); }
+			else { pPlayer->IncrementArmorValue(m_flPickUpAmount, MAX_NORMAL_BATTERY); }
+
+			if (m_PickupSnd != NULL_STRING)
+			{
+				CPASAttenuationFilter filter(this);
+				EmitSound_t ep;
+				ep.m_pSoundName = (char*)STRING(m_PickupSnd);
+				EmitSound(filter, pPlayer->entindex(), ep);
+			}
+			else
+			{
+				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
+				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+			}
+			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this);}
+			m_OnCollected.FireOutput(pActivator, this);
+		}
+		else if (MAX_NORMAL_BATTERY)// When suit is full, player can pickup item as physics prop.
+		{
+			pPlayer->PickupObject(this);
+			m_OnPickedUp.FireOutput(pActivator, this);
+			return;
+		}
+	}
+	DECLARE_DATADESC();
+};
+
+LINK_ENTITY_TO_CLASS(item_battery, CItemBattery);
+PRECACHE_REGISTER(item_battery);
+
+BEGIN_DATADESC(CItemBattery)
+	DEFINE_KEYFIELD(m_flPickUpAmount, FIELD_FLOAT, "itemval"),
+	DEFINE_KEYFIELD(m_PickupSnd, FIELD_SOUNDNAME, "message"),
+
+	//Output
+	DEFINE_OUTPUT(m_OnCollected, "OnCollected"),
+	DEFINE_OUTPUT(m_OnPickedUp, "OnPickedUp"),
+END_DATADESC()
 
 // ========================================================================
 //	>> BoxSRounds
@@ -108,10 +143,12 @@ public:
 		SetModel( "models/items/boxsrounds.mdl" );
 		BaseClass::Spawn( );
 	}
+
 	void Precache( void )
 	{
 		PrecacheModel ("models/items/boxsrounds.mdl");
 	}
+
 	bool MyTouch( CBasePlayer *pPlayer )
 	{
 		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_PISTOL, "Pistol"))
@@ -126,6 +163,7 @@ public:
 		return false;
 	}
 };
+
 LINK_ENTITY_TO_CLASS(item_box_srounds, CItem_BoxSRounds);
 LINK_ENTITY_TO_CLASS(item_ammo_pistol, CItem_BoxSRounds);
 
@@ -347,6 +385,7 @@ public:
 	{
 		PrecacheModel ("models/items/357ammobox.mdl");
 	}
+
 	void Spawn( void )
 	{ 
 		Precache( );
@@ -367,6 +406,7 @@ public:
 		return false;
 	}
 };
+
 LINK_ENTITY_TO_CLASS(item_ammo_357_large, CItem_LargeBox357Rounds);
 
 
@@ -721,34 +761,20 @@ protected:
 LINK_ENTITY_TO_CLASS( item_ammo_crate, CItem_AmmoCrate );
 
 BEGIN_DATADESC( CItem_AmmoCrate )
-
 	DEFINE_KEYFIELD( m_nAmmoType,	FIELD_INTEGER, "AmmoType" ),	
-
 	DEFINE_FIELD( m_flCloseTime, FIELD_FLOAT ),
 	DEFINE_FIELD( m_hActivator, FIELD_EHANDLE ),
-
-	// These can be recreated
-	//DEFINE_FIELD( m_nAmmoIndex,		FIELD_INTEGER ),
-	//DEFINE_FIELD( m_lpzModelNames,	FIELD_ ),
-	//DEFINE_FIELD( m_lpzAmmoNames,	FIELD_ ),
-	//DEFINE_FIELD( m_nAmmoAmounts,	FIELD_INTEGER ),
-
 	DEFINE_OUTPUT( m_OnUsed, "OnUsed" ),
-
 #ifdef MAPBASE
 	DEFINE_OUTPUT( m_OnAmmoTaken, "OnAmmoTaken" ),
 #endif
-
 	DEFINE_INPUTFUNC( FIELD_VOID, "Kill", InputKill ),
-
 	DEFINE_THINKFUNC( CrateThink ),
-
 END_DATADESC()
 
 //-----------------------------------------------------------------------------
 // Animation events.
 //-----------------------------------------------------------------------------
-
 // Models names
 const char *CItem_AmmoCrate::m_lpzModelNames[NUM_AMMO_CRATE_TYPES] =
 {
@@ -834,9 +860,6 @@ const char *CItem_AmmoCrate::m_pGiveWeapon[NUM_AMMO_CRATE_TYPES] =
 
 #define	AMMO_CRATE_CLOSE_DELAY	1.5f
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CItem_AmmoCrate::Spawn( void )
 {
 	Precache();
@@ -857,32 +880,21 @@ void CItem_AmmoCrate::Spawn( void )
 	SetCycle( 0 );
 
 	m_takedamage = DAMAGE_EVENTS_ONLY;
-
 }
 
-//------------------------------------------------------------------------------
-// Purpose:
-//------------------------------------------------------------------------------
 bool CItem_AmmoCrate::CreateVPhysics( void )
 {
 	return ( VPhysicsInitStatic() != NULL );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CItem_AmmoCrate::Precache( void )
 {
 	SetupCrate();
 	PrecacheModel( STRING( GetModelName() ) );
-
 	PrecacheScriptSound( "AmmoCrate.Open" );
 	PrecacheScriptSound( "AmmoCrate.Close" );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CItem_AmmoCrate::SetupCrate( void )
 {
 #ifdef MAPBASE
@@ -894,9 +906,6 @@ void CItem_AmmoCrate::SetupCrate( void )
 	m_nAmmoIndex = GetAmmoDef()->Index( m_lpzAmmoNames[m_nAmmoType] );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CItem_AmmoCrate::OnRestore( void )
 {
 	BaseClass::OnRestore();
@@ -905,13 +914,6 @@ void CItem_AmmoCrate::OnRestore( void )
 	SetupCrate();
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *pActivator - 
-//			*pCaller - 
-//			useType - 
-//			value - 
-//-----------------------------------------------------------------------------
 void CItem_AmmoCrate::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
 	CBasePlayer *pPlayer = ToBasePlayer( pActivator );
@@ -979,11 +981,9 @@ int CItem_AmmoCrate::OnTakeDamage( const CTakeDamageInfo &info )
 			Use(info.GetAttacker(), info.GetAttacker(), USE_TOGGLE, 0.0f);
 		}
 	}
-
 	// don't actually take any damage
 	return 0;
 }
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Catches the monster-specific messages that occur when tagged
@@ -1036,14 +1036,9 @@ void CItem_AmmoCrate::HandleAnimEvent( animevent_t *pEvent )
 		}
 		return;
 	}
-
 	BaseClass::HandleAnimEvent( pEvent );
 }
 
-	
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CItem_AmmoCrate::CrateThink( void )
 {
 	StudioFrameAdvance();
@@ -1081,10 +1076,6 @@ void CItem_AmmoCrate::CrateThink( void )
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : &data - 
-//-----------------------------------------------------------------------------
 void CItem_AmmoCrate::InputKill( inputdata_t &data )
 {
 #ifdef MAPBASE
@@ -1093,7 +1084,5 @@ void CItem_AmmoCrate::InputKill( inputdata_t &data )
 	// I don't understand.
 	m_OnKilled.FireOutput( data.pActivator, this );
 #endif
-
 	UTIL_Remove( this );
 }
-

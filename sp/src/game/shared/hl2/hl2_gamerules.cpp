@@ -275,6 +275,14 @@ void CHalfLife2Proxy::UpdateOnRemove()
 	END_SEND_TABLE()
 #endif
 
+//-----------------------------------------------------------------------------
+// 
+// Purpose: SKILL CONVARS!
+// 
+//-----------------------------------------------------------------------------
+//ITEMS
+ConVar	sk_battery("sk_battery", "0");
+
 ConVar  physcannon_mega_enabled( "physcannon_mega_enabled", "0", FCVAR_CHEAT | FCVAR_REPLICATED );
 
 // Controls the application of the robus radius damage model.
@@ -325,11 +333,6 @@ ConVar	sk_max_pistol			( "sk_max_pistol","0", FCVAR_REPLICATED);
 ConVar	sk_plr_dmg_smg1			( "sk_plr_dmg_smg1","0", FCVAR_REPLICATED );
 ConVar	sk_npc_dmg_smg1			( "sk_npc_dmg_smg1","0", FCVAR_REPLICATED);
 ConVar	sk_max_smg1				( "sk_max_smg1","0", FCVAR_REPLICATED);
-
-// FIXME: remove these
-//ConVar	sk_plr_dmg_flare_round	( "sk_plr_dmg_flare_round","0", FCVAR_REPLICATED);
-//ConVar	sk_npc_dmg_flare_round	( "sk_npc_dmg_flare_round","0", FCVAR_REPLICATED);
-//ConVar	sk_max_flare_round		( "sk_max_flare_round","0", FCVAR_REPLICATED);
 
 ConVar	sk_plr_dmg_buckshot		( "sk_plr_dmg_buckshot","0", FCVAR_REPLICATED);	
 ConVar	sk_npc_dmg_buckshot		( "sk_npc_dmg_buckshot","0", FCVAR_REPLICATED);
