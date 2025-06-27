@@ -4,14 +4,12 @@
 //			damage cvars.
 //
 //=============================================================================
-
 #include "cbase.h"
 #include "hl2_gamerules.h"
 #include "ammodef.h"
 #include "hl2_shareddefs.h"
 
 #ifdef CLIENT_DLL
-
 #else
 	#include "player.h"
 	#include "game.h"
@@ -23,10 +21,7 @@
 	#include "ai_basenpc.h"
 	#include "weapon_physcannon.h"
 #endif
-
-// memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
-
 
 REGISTER_GAMERULES_CLASS( CHalfLife2 );
 
@@ -321,6 +316,48 @@ ConVar	sk_max_frag("sk_max_frag", "0");
 //-----------------------------------------------------------------------------
 ConVar	sk_battery_max("sk_battery_max", "0"); // Max Battery
 ConVar	sk_health_max("sk_health_max", "0"); // Max Health
+ConVar	sk_citizen_heal_player("sk_citizen_heal_player", "25");
+ConVar	sk_citizen_heal_player_delay("sk_citizen_heal_player_delay", "25");
+ConVar	sk_citizen_giveammo_player_delay("sk_citizen_giveammo_player_delay", "0");
+ConVar	sk_citizen_heal_player_min_pct("sk_citizen_heal_player_min_pct", "0.60");
+ConVar	sk_citizen_heal_player_min_forced("sk_citizen_heal_player_min_forced", "10.0");
+ConVar	sk_citizen_heal_ally("sk_citizen_heal_ally", "30");
+ConVar	sk_citizen_heal_ally_delay("sk_citizen_heal_ally_delay", "20");
+ConVar	sk_citizen_heal_ally_min_pct("sk_citizen_heal_ally_min_pct", "0.90");
+ConVar	sk_citizen_player_stare_time("sk_citizen_player_stare_time", "1.0");
+ConVar  sk_citizen_player_stare_dist("sk_citizen_player_stare_dist", "72");
+ConVar	sk_citizen_stare_heal_time("sk_citizen_stare_heal_time", "5");
+ConVar	npc_citizen_insignia("npc_citizen_insignia", "0");
+ConVar	npc_citizen_squad_marker("npc_citizen_squad_marker", "0");
+ConVar	npc_citizen_explosive_resist("npc_citizen_explosive_resist", "0");
+ConVar	npc_citizen_auto_player_squad("npc_citizen_auto_player_squad", "1");
+ConVar	npc_citizen_auto_player_squad_allow_use("npc_citizen_auto_player_squad_allow_use", "0");
+ConVar	npc_citizen_squad_secondary_toggle_use_button("npc_citizen_squad_toggle_use_button", "262144"); // IN_WALK by default
+ConVar	npc_citizen_squad_secondary_toggle_use_always("npc_citizen_squad_secondary_toggle_use_always", "0", FCVAR_NONE, "Allows all citizens not strictly stuck to the player's squad to be toggled via Alt + E.");
+ConVar	npc_citizen_dont_precache_all("npc_citizen_dont_precache_all", "0");
+ConVar  npc_citizen_medic_emit_sound("npc_citizen_medic_emit_sound", "1");
+ConVar  npc_citizen_heal_chuck_medkit("npc_citizen_heal_chuck_medkit", "1", FCVAR_ARCHIVE, "Set to 1 to use new experimental healthkit-throwing medic.");
+ConVar	npc_citizen_medic_throw_style("npc_citizen_medic_throw_style", "1", FCVAR_ARCHIVE, "Set to 0 for a lobbier trajectory");
+ConVar	npc_citizen_medic_throw_speed("npc_citizen_medic_throw_speed", "650");
+ConVar	sk_citizen_heal_toss_player_delay("sk_citizen_heal_toss_player_delay", "26", FCVAR_NONE, "how long between throwing healthkits");
+ConVar	player_squad_autosummon_enabled("player_squad_autosummon_enabled", "1");
+ConVar	player_squad_autosummon_time("player_squad_autosummon_time", "5");
+ConVar	player_squad_autosummon_move_tolerance("player_squad_autosummon_move_tolerance", "20");
+ConVar	player_squad_autosummon_player_tolerance("player_squad_autosummon_player_tolerance", "10");
+ConVar	player_squad_autosummon_time_after_combat("player_squad_autosummon_time_after_combat", "8");
+ConVar	player_squad_autosummon_debug("player_squad_autosummon_debug", "0");
+ConVar	npc_citizen_resupplier_adjust_ammo("npc_citizen_resupplier_adjust_ammo", "1", FCVAR_NONE, "If what ammo we give to the player would go over their max, should we adjust what we give accordingly (1) or cancel it altogether? (0)");
+ConVar	npc_citizen_nocollide_player("npc_citizen_nocollide_player", "0");
+ConVar	g_ai_citizen_show_enemy("g_ai_citizen_show_enemy", "0");
+ConVar	ai_follow_move_commands("ai_follow_move_commands", "1");
+ConVar	ai_citizen_debug_commander("ai_citizen_debug_commander", "1");
+
+//-----------------------------------------------------------------------------
+//NPC
+//-----------------------------------------------------------------------------
+ConVar	sk_citizen_health("sk_citizen_health", "0");
+ConVar	sk_bms_security_health("sk_bms_security_health", "0");
+
 
 //-----------------------------------------------------------------------------
 ConVar  physcannon_mega_enabled( "physcannon_mega_enabled", "0", FCVAR_CHEAT | FCVAR_REPLICATED );

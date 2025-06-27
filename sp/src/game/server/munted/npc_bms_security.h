@@ -20,7 +20,7 @@ struct SquadCandidate_t;
 
 //-----------------------------------------------------------------------------
 //
-// CLASS: CNPC_Citizen
+// CLASS: CNPC_BMSSecurity
 //
 //-----------------------------------------------------------------------------
 
@@ -54,27 +54,11 @@ enum CitizenType_t
 	CT_UNIQUE
 };
 
-//-----------------------------------------------------------------------------
-// Citizen expression types
-//-----------------------------------------------------------------------------
-enum CitizenExpressionTypes_t
+class CNPC_BMSSecurity : public CNPC_PlayerCompanion
 {
-	CIT_EXP_UNASSIGNED,	// Defaults to this, selects other in spawn.
-
-	CIT_EXP_SCARED,
-	CIT_EXP_NORMAL,
-	CIT_EXP_ANGRY,
-
-	CIT_EXP_LAST_TYPE,
-};
-
-//-------------------------------------
-
-class CNPC_Citizen : public CNPC_PlayerCompanion
-{
-	DECLARE_CLASS( CNPC_Citizen, CNPC_PlayerCompanion );
+	DECLARE_CLASS( CNPC_BMSSecurity, CNPC_PlayerCompanion );
 public:
-	CNPC_Citizen()
+	CNPC_BMSSecurity()
 	 :	m_iHead( -1 )
 	{
 	}
@@ -86,10 +70,8 @@ public:
 	void			Spawn();
 	void			PostNPCInit();
 	virtual void	SelectModel();
-	void			SelectExpressionType();
 	void			Activate();
 	virtual void	OnGivenWeapon( CBaseCombatWeapon *pNewWeapon );
-	void			FixupMattWeapon();
 
 #ifdef HL2_EPISODIC
 	virtual float	GetJumpGravity() const		{ return 1.8f; }
@@ -144,8 +126,6 @@ public:
 	void 			SimpleUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
 	bool			IgnorePlayerPushing( void );
-
-	int				DrawDebugTextOverlays( void );
 
 	virtual const char *SelectRandomExpressionForState( NPC_STATE state );
 
@@ -206,7 +186,6 @@ public:
 	void 			FixupPlayerSquad();
 	void 			ClearFollowTarget();
 	void 			UpdateFollowCommandPoint();
-	bool			IsFollowingCommandPoint();
 	CAI_BaseNPC *	GetSquadCommandRepresentative();
 	void			SetSquad( CAI_Squad *pSquad );
 	void			AddInsignia();
@@ -340,9 +319,7 @@ private:
 
 	CSimpleSimTimer	m_AutoSummonTimer;
 	Vector			m_vAutoSummonAnchor;
-
 	CitizenType_t	m_Type;
-	CitizenExpressionTypes_t	m_ExpressionType;
 
 	int				m_iHead;
 
@@ -399,7 +376,7 @@ protected:
 
 //---------------------------------------------------------
 //---------------------------------------------------------
-inline bool CNPC_Citizen::NearCommandGoal()
+inline bool CNPC_BMSSecurity::NearCommandGoal()
 {
 	const float flDistSqr = COMMAND_GOAL_TOLERANCE * COMMAND_GOAL_TOLERANCE;
 	return ( ( GetAbsOrigin() - GetCommandGoal() ).LengthSqr() <= flDistSqr );
@@ -407,7 +384,7 @@ inline bool CNPC_Citizen::NearCommandGoal()
 
 //---------------------------------------------------------
 //---------------------------------------------------------
-inline bool CNPC_Citizen::VeryFarFromCommandGoal()
+inline bool CNPC_BMSSecurity::VeryFarFromCommandGoal()
 {
 	const float flDistSqr = (12*50) * (12*50);
 	return ( ( GetAbsOrigin() - GetCommandGoal() ).LengthSqr() > flDistSqr );

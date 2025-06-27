@@ -310,6 +310,8 @@ public:
 	void Precache( void )
 	{
 		PrecacheModel ("models/items/boxsrounds.mdl");
+		PrecacheScriptSound("BaseCombatCharacter.AmmoPickup");
+		if (m_PickupSnd != NULL_STRING) { PrecacheScriptSound(STRING(m_PickupSnd)); }
 	}
 
 	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
@@ -337,8 +339,8 @@ public:
 			}
 			else
 			{
-				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
-				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+				CPASAttenuationFilter filter(pPlayer, "BaseCombatCharacter.AmmoPickup");
+				EmitSound(filter, pPlayer->entindex(), "BaseCombatCharacter.AmmoPickup");
 			}
 
 			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
@@ -388,6 +390,8 @@ public:
 	void Precache( void )
 	{
 		PrecacheModel ("models/items/boxmrounds.mdl");
+		PrecacheScriptSound("BaseCombatCharacter.AmmoPickup");
+		if (m_PickupSnd != NULL_STRING) { PrecacheScriptSound(STRING(m_PickupSnd)); }
 	}
 
 	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
@@ -415,8 +419,8 @@ public:
 			}
 			else
 			{
-				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
-				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+				CPASAttenuationFilter filter(pPlayer, "BaseCombatCharacter.AmmoPickup");
+				EmitSound(filter, pPlayer->entindex(), "BaseCombatCharacter.AmmoPickup");
 			}
 
 			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
@@ -466,6 +470,8 @@ public:
 	void Precache( void )
 	{
 		PrecacheModel ("models/items/combine_rifle_cartridge01.mdl");
+		PrecacheScriptSound("BaseCombatCharacter.AmmoPickup");
+		if (m_PickupSnd != NULL_STRING) { PrecacheScriptSound(STRING(m_PickupSnd)); }
 	}
 
 	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
@@ -493,8 +499,8 @@ public:
 			}
 			else
 			{
-				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
-				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+				CPASAttenuationFilter filter(pPlayer, "BaseCombatCharacter.AmmoPickup");
+				EmitSound(filter, pPlayer->entindex(), "BaseCombatCharacter.AmmoPickup");
 			}
 
 			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
@@ -534,16 +540,18 @@ class CItem_Box357Rounds : public CItem
 public:
 	DECLARE_CLASS( CItem_Box357Rounds, CItem );
 
-	void Precache( void )
-	{
-		PrecacheModel ("models/items/357ammo.mdl");
-	}
-
 	void Spawn( void )
 	{ 
 		Precache( );
 		SetModel( "models/items/357ammo.mdl");
 		BaseClass::Spawn( );
+	}
+
+	void Precache(void)
+	{
+		PrecacheModel("models/items/357ammo.mdl");
+		PrecacheScriptSound("BaseCombatCharacter.AmmoPickup");
+		if (m_PickupSnd != NULL_STRING) { PrecacheScriptSound(STRING(m_PickupSnd)); }
 	}
 
 	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
@@ -571,8 +579,8 @@ public:
 			}
 			else
 			{
-				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
-				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+				CPASAttenuationFilter filter(pPlayer, "BaseCombatCharacter.AmmoPickup");
+				EmitSound(filter, pPlayer->entindex(), "BaseCombatCharacter.AmmoPickup");
 			}
 
 			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
@@ -610,16 +618,18 @@ class CItem_BoxXBowRounds : public CItem
 public:
 	DECLARE_CLASS( CItem_BoxXBowRounds, CItem );
 
-	void Precache( void )
-	{
-		PrecacheModel ("models/items/crossbowrounds.mdl");
-	}
-
 	void Spawn( void )
 	{ 
 		Precache( );
 		SetModel( "models/items/crossbowrounds.mdl");
 		BaseClass::Spawn( );
+	}
+
+	void Precache(void)
+	{
+		PrecacheModel("models/items/crossbowrounds.mdl");
+		PrecacheScriptSound("BaseCombatCharacter.AmmoPickup");
+		if (m_PickupSnd != NULL_STRING) { PrecacheScriptSound(STRING(m_PickupSnd)); }
 	}
 
 	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
@@ -647,8 +657,8 @@ public:
 			}
 			else
 			{
-				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
-				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+				CPASAttenuationFilter filter(pPlayer, "BaseCombatCharacter.AmmoPickup");
+				EmitSound(filter, pPlayer->entindex(), "BaseCombatCharacter.AmmoPickup");
 			}
 
 			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
@@ -695,6 +705,8 @@ public:
 	void Precache( void )
 	{
 		PrecacheModel ("models/items/flare.mdl");
+		PrecacheScriptSound("BaseCombatCharacter.AmmoPickup");
+		if (m_PickupSnd != NULL_STRING) { PrecacheScriptSound(STRING(m_PickupSnd)); }
 	}
 
 	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
@@ -722,8 +734,8 @@ public:
 			}
 			else
 			{
-				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
-				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+				CPASAttenuationFilter filter(pPlayer, "BaseCombatCharacter.AmmoPickup");
+				EmitSound(filter, pPlayer->entindex(), "BaseCombatCharacter.AmmoPickup");
 			}
 
 			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
@@ -771,6 +783,8 @@ public:
 	void Precache( void )
 	{
 		PrecacheModel ("models/weapons/w_missile_closed.mdl");
+		PrecacheScriptSound("BaseCombatCharacter.AmmoPickup");
+		if (m_PickupSnd != NULL_STRING) { PrecacheScriptSound(STRING(m_PickupSnd)); }
 	}
 
 	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
@@ -798,8 +812,8 @@ public:
 			}
 			else
 			{
-				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
-				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+				CPASAttenuationFilter filter(pPlayer, "BaseCombatCharacter.AmmoPickup");
+				EmitSound(filter, pPlayer->entindex(), "BaseCombatCharacter.AmmoPickup");
 			}
 
 			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
@@ -847,6 +861,8 @@ public:
 	void Precache( void )
 	{
 		PrecacheModel ("models/items/ar2_grenade.mdl");
+		PrecacheScriptSound("BaseCombatCharacter.AmmoPickup");
+		if (m_PickupSnd != NULL_STRING) { PrecacheScriptSound(STRING(m_PickupSnd)); }
 	}
 
 	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
@@ -874,8 +890,8 @@ public:
 			}
 			else
 			{
-				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
-				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+				CPASAttenuationFilter filter(pPlayer, "BaseCombatCharacter.AmmoPickup");
+				EmitSound(filter, pPlayer->entindex(), "BaseCombatCharacter.AmmoPickup");
 			}
 
 			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
@@ -923,6 +939,8 @@ public:
 	void Precache( void )
 	{
 		PrecacheModel ("models/items/boxsniperrounds.mdl");
+		PrecacheScriptSound("BaseCombatCharacter.AmmoPickup");
+		if (m_PickupSnd != NULL_STRING) { PrecacheScriptSound(STRING(m_PickupSnd)); }
 	}
 
 	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
@@ -950,8 +968,8 @@ public:
 			}
 			else
 			{
-				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
-				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+				CPASAttenuationFilter filter(pPlayer, "BaseCombatCharacter.AmmoPickup");
+				EmitSound(filter, pPlayer->entindex(), "BaseCombatCharacter.AmmoPickup");
 			}
 
 			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
@@ -998,6 +1016,8 @@ public:
 	void Precache( void )
 	{
 		PrecacheModel ("models/items/boxbuckshot.mdl");
+		PrecacheScriptSound("BaseCombatCharacter.AmmoPickup");
+		if (m_PickupSnd != NULL_STRING) { PrecacheScriptSound(STRING(m_PickupSnd)); }
 	}
 
 	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
@@ -1025,8 +1045,8 @@ public:
 			}
 			else
 			{
-				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
-				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+				CPASAttenuationFilter filter(pPlayer, "BaseCombatCharacter.AmmoPickup");
+				EmitSound(filter, pPlayer->entindex(), "BaseCombatCharacter.AmmoPickup");
 			}
 
 			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
@@ -1063,17 +1083,19 @@ class CItem_AR2AltFireRound : public CItem
 public:
 	DECLARE_CLASS( CItem_AR2AltFireRound, CItem );
 
-	void Precache( void )
-	{
-		PrecacheParticleSystem( "combineball" );
-		PrecacheModel ("models/items/combine_rifle_ammo01.mdl");
-	}
-
 	void Spawn( void )
 	{ 
 		Precache( );
 		SetModel( "models/items/combine_rifle_ammo01.mdl");
 		BaseClass::Spawn( );
+	}
+
+	void Precache(void)
+	{
+		PrecacheParticleSystem("combineball");
+		PrecacheModel("models/items/combine_rifle_ammo01.mdl");
+		PrecacheScriptSound("BaseCombatCharacter.AmmoPickup");
+		if (m_PickupSnd != NULL_STRING) { PrecacheScriptSound(STRING(m_PickupSnd)); }
 	}
 
 	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
@@ -1101,8 +1123,8 @@ public:
 			}
 			else
 			{
-				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
-				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+				CPASAttenuationFilter filter(pPlayer, "BaseCombatCharacter.AmmoPickup");
+				EmitSound(filter, pPlayer->entindex(), "BaseCombatCharacter.AmmoPickup");
 			}
 
 			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }

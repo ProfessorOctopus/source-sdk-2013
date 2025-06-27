@@ -1,44 +1,32 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose: The downtrodden citizens of City 17. Timid when unarmed, they will
-//			rise up against their Combine oppressors when given a weapon.
-//
-//=============================================================================//
-
-#ifndef	NPC_CITIZEN_H
-#define	NPC_CITIZEN_H
+#ifndef	NPC_BMSSEC_H
+#define	NPC_BMSSEC_H
 
 #include "npc_playercompanion.h"
-
 #include "ai_behavior_functank.h"
-#ifdef MAPBASE
 #include "ai_behavior_rappel.h"
 #include "ai_behavior_police.h"
-#endif
 
 struct SquadCandidate_t;
 
 //-----------------------------------------------------------------------------
-//
-// CLASS: CNPC_Citizen
-//
+// CLASS: BLACK MESA SECURITY
 //-----------------------------------------------------------------------------
 
 //-------------------------------------
 // Spawnflags
 //-------------------------------------
-
-#define SF_CITIZEN_FOLLOW			( 1 << 16 )	//65536 follow the player as soon as I spawn.
-#define	SF_CITIZEN_MEDIC			( 1 << 17 )	//131072
-#define SF_CITIZEN_RANDOM_HEAD		( 1 << 18 )	//262144
-#define SF_CITIZEN_AMMORESUPPLIER	( 1 << 19 )	//524288
-#define SF_CITIZEN_NOT_COMMANDABLE	( 1 << 20 ) //1048576
-#define SF_CITIZEN_IGNORE_SEMAPHORE ( 1 << 21 ) //2097152		Work outside the speech semaphore system
-#define SF_CITIZEN_RANDOM_HEAD_MALE	( 1 << 22 )	//4194304
-#define SF_CITIZEN_RANDOM_HEAD_FEMALE ( 1 << 23 )//8388608
-#define SF_CITIZEN_USE_RENDER_BOUNDS ( 1 << 24 )//16777216
+#define SF_BMSSEC_FOLLOW			( 1 << 16 )	//65536 follow the player as soon as I spawn.
+#define	SF_BMSSEC_MEDIC			( 1 << 17 )	//131072
+#define SF_BMSSEC_RANDOM_HEAD		( 1 << 18 )	//262144
+#define SF_BMSSEC_AMMORESUPPLIER	( 1 << 19 )	//524288
+#define SF_BMSSEC_NOT_COMMANDABLE	( 1 << 20 ) //1048576
+#define SF_BMSSEC_IGNORE_SEMAPHORE ( 1 << 21 ) //2097152		Work outside the speech semaphore system
+#define SF_BMSSEC_RANDOM_HEAD_MALE	( 1 << 22 )	//4194304
+#define SF_BMSSEC_RANDOM_HEAD_FEMALE ( 1 << 23 )//8388608
+#define SF_BMSSEC_USE_RENDER_BOUNDS ( 1 << 24 )//16777216
 #ifdef MAPBASE
-#define SF_CITIZEN_PLAYER_TOGGLE_SQUAD ( 1 << 25 ) //33554432		Prevents the citizen from joining the squad automatically, but still being commandable if the player toggles it
+#define SF_BMSSEC_PLAYER_TOGGLE_SQUAD ( 1 << 25 ) //33554432		Prevents the citizen from joining the squad automatically, but still being commandable if the player toggles it
 #endif
 
 //-------------------------------------
@@ -54,54 +42,27 @@ enum CitizenType_t
 	CT_UNIQUE
 };
 
-//-----------------------------------------------------------------------------
-// Citizen expression types
-//-----------------------------------------------------------------------------
-enum CitizenExpressionTypes_t
+class CNPC_BMSSecurity : public CNPC_PlayerCompanion
 {
-	CIT_EXP_UNASSIGNED,	// Defaults to this, selects other in spawn.
-
-	CIT_EXP_SCARED,
-	CIT_EXP_NORMAL,
-	CIT_EXP_ANGRY,
-
-	CIT_EXP_LAST_TYPE,
-};
-
-//-------------------------------------
-
-class CNPC_Citizen : public CNPC_PlayerCompanion
-{
-	DECLARE_CLASS( CNPC_Citizen, CNPC_PlayerCompanion );
+	DECLARE_CLASS( CNPC_BMSSecurity, CNPC_PlayerCompanion );
 public:
-	CNPC_Citizen()
+	CNPC_BMSSecurity()
 	 :	m_iHead( -1 )
 	{
 	}
 
-	//---------------------------------
 	bool			CreateBehaviors();
 	void			Precache();
 	void			PrecacheAllOfType( CitizenType_t );
 	void			Spawn();
 	void			PostNPCInit();
 	virtual void	SelectModel();
-	void			SelectExpressionType();
 	void			Activate();
 	virtual void	OnGivenWeapon( CBaseCombatWeapon *pNewWeapon );
-	void			FixupMattWeapon();
-
-#ifdef HL2_EPISODIC
 	virtual float	GetJumpGravity() const		{ return 1.8f; }
-#endif//HL2_EPISODIC
-
 	void			OnRestore();
-	
-	//---------------------------------
 	string_t 		GetModelName() const;
-	
 	Class_T 		Classify();
-
 	bool 			ShouldAlwaysThink();
 
 	//---------------------------------
@@ -112,12 +73,9 @@ public:
 	void			PredictPlayerPush();
 	void 			PrescheduleThink();
 	void			BuildScheduleTestBits();
-
 	bool			FInViewCone( CBaseEntity *pEntity );
-
 	int				SelectFailSchedule( int failedSchedule, int failedTask, AI_TaskFailureCode_t taskFailCode );
 	int				SelectSchedule();
-
 	int 			SelectSchedulePriorityAction();
 	int 			SelectScheduleHeal();
 	int 			SelectScheduleRetrieveItem();
@@ -126,45 +84,28 @@ public:
 	int 			SelectScheduleCombat();
 	bool			ShouldDeferToFollowBehavior();
 	int 			TranslateSchedule( int scheduleType );
-
 	bool			ShouldAcceptGoal( CAI_BehaviorBase *pBehavior, CAI_GoalEntity *pGoal );
 	void			OnClearGoal( CAI_BehaviorBase *pBehavior, CAI_GoalEntity *pGoal );
-	
 	void 			StartTask( const Task_t *pTask );
 	void 			RunTask( const Task_t *pTask );
-	
 	Activity		NPC_TranslateActivity( Activity eNewActivity );
 	void 			HandleAnimEvent( animevent_t *pEvent );
 	void			TaskFail( AI_TaskFailureCode_t code );
-
-#ifndef MAPBASE // Moved to CAI_BaseNPC
 	void 			PickupItem( CBaseEntity *pItem );
-#endif
-
 	void 			SimpleUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
-
 	bool			IgnorePlayerPushing( void );
-
-	int				DrawDebugTextOverlays( void );
-
-	virtual const char *SelectRandomExpressionForState( NPC_STATE state );
 
 	//---------------------------------
 	// Combat
 	//---------------------------------
 	bool 			OnBeginMoveAndShoot();
 	void 			OnEndMoveAndShoot();
-	
 	virtual bool	UseAttackSquadSlots()	{ return false; }
 	void 			LocateEnemySound();
-
 	bool			IsManhackMeleeCombatant();
-	
 	Vector 			GetActualShootPosition( const Vector &shootOrigin );
 	void 			OnChangeActiveWeapon( CBaseCombatWeapon *pOldWeapon, CBaseCombatWeapon *pNewWeapon );
-
 	bool			ShouldLookForBetterWeapon();
-
 
 	//---------------------------------
 	// Damage handling
@@ -172,7 +113,6 @@ public:
 	int 			OnTakeDamage_Alive( const CTakeDamageInfo &info );
 
 #ifdef MAPBASE
-	//---------------------------------
 	void			ModifyOrAppendCriteria( AI_CriteriaSet& set );
 #endif
 	
@@ -185,7 +125,6 @@ public:
 	bool			WasInPlayerSquad();
 	bool			HaveCommandGoal() const;
 	bool			IsCommandMoving();
-	bool			ShouldAutoSummon();
 	bool 			IsValidCommandTarget( CBaseEntity *pTarget );
 	bool 			NearCommandGoal();
 	bool 			VeryFarFromCommandGoal();
@@ -193,9 +132,7 @@ public:
 	void 			MoveOrder( const Vector &vecDest, CAI_BaseNPC **Allies, int numAllies );
 	void			OnMoveOrder();
 	void 			CommanderUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
-#ifdef MAPBASE
 	bool			ShouldAllowSquadToggleUse( CBasePlayer *pPlayer );
-#endif
 	bool			ShouldSpeakRadio( CBaseEntity *pListener );
 	void			OnMoveToCommandGoalFailed();
 	void			AddToPlayerSquad();
@@ -206,17 +143,13 @@ public:
 	void 			FixupPlayerSquad();
 	void 			ClearFollowTarget();
 	void 			UpdateFollowCommandPoint();
-	bool			IsFollowingCommandPoint();
 	CAI_BaseNPC *	GetSquadCommandRepresentative();
 	void			SetSquad( CAI_Squad *pSquad );
 	void			AddInsignia();
 	void			RemoveInsignia();
 	bool			SpeakCommandResponse( AIConcept_t concept, const char *modifiers = NULL );
-
-#ifdef MAPBASE
 	virtual void	SetPlayerAvoidState( void );
-#endif
-	
+
 	//---------------------------------
 	// Scanner interaction
 	//---------------------------------
@@ -232,12 +165,14 @@ public:
 	//---------------------------------
 	// Special abilities
 	//---------------------------------
-	bool 			IsMedic() 			{ return HasSpawnFlags(SF_CITIZEN_MEDIC); }
-	bool 			IsAmmoResupplier() 	{ return HasSpawnFlags(SF_CITIZEN_AMMORESUPPLIER); }
+	bool 			IsMedic() 			{ return HasSpawnFlags(SF_BMSSEC_MEDIC); }
+	bool 			IsAmmoResupplier() 	{ return HasSpawnFlags(SF_BMSSEC_AMMORESUPPLIER); }
 	
 	bool 			CanHeal();
 	bool 			ShouldHealTarget( CBaseEntity *pTarget, bool bActiveUse = false );
+#if HL2_EPISODIC
 	bool 			ShouldHealTossTarget( CBaseEntity *pTarget, bool bActiveUse = false );
+#endif
 	void 			Heal();
 
 	bool			ShouldLookForHealthItem();
@@ -291,25 +226,25 @@ private:
 		COND_CIT_HURTBYFIRE,
 		COND_CIT_START_INSPECTION,
 		
-		SCHED_CITIZEN_PLAY_INSPECT_ACTIVITY = BaseClass::NEXT_SCHEDULE,
-		SCHED_CITIZEN_HEAL,
-		SCHED_CITIZEN_RANGE_ATTACK1_RPG,
-		SCHED_CITIZEN_PATROL,
-		SCHED_CITIZEN_MOURN_PLAYER,
-		SCHED_CITIZEN_SIT_ON_TRAIN,
-		SCHED_CITIZEN_STRIDER_RANGE_ATTACK1_RPG,
+		SCHED_BMSSEC_PLAY_INSPECT_ACTIVITY = BaseClass::NEXT_SCHEDULE,
+		SCHED_BMSSEC_HEAL,
+		SCHED_BMSSEC_RANGE_ATTACK1_RPG,
+		SCHED_BMSSEC_PATROL,
+		SCHED_BMSSEC_MOURN_PLAYER,
+		SCHED_BMSSEC_SIT_ON_TRAIN,
+		SCHED_BMSSEC_STRIDER_RANGE_ATTACK1_RPG,
 #ifdef HL2_EPISODIC
-		SCHED_CITIZEN_HEAL_TOSS,
+		SCHED_BMSSEC_HEAL_TOSS,
 #endif
 		
-		TASK_CIT_HEAL = BaseClass::NEXT_TASK,
-		TASK_CIT_RPG_AUGER,
-		TASK_CIT_PLAY_INSPECT_SEQUENCE,
-		TASK_CIT_SIT_ON_TRAIN,
-		TASK_CIT_LEAVE_TRAIN,
-		TASK_CIT_SPEAK_MOURNING,
+		TASK_BMSSEC_HEAL = BaseClass::NEXT_TASK,
+		TASK_BMSSEC_RPG_AUGER,
+		TASK_BMSSEC_PLAY_INSPECT_SEQUENCE,
+		TASK_BMSSEC_SIT_ON_TRAIN,
+		TASK_BMSSEC_LEAVE_TRAIN,
+		TASK_BMSSEC_SPEAK_MOURNING,
 #ifdef HL2_EPISODIC
-		TASK_CIT_HEAL_TOSS,
+		TASK_BMSSEC_HEAL_TOSS,
 #endif
 
 	};
@@ -342,7 +277,6 @@ private:
 	Vector			m_vAutoSummonAnchor;
 
 	CitizenType_t	m_Type;
-	CitizenExpressionTypes_t	m_ExpressionType;
 
 	int				m_iHead;
 
@@ -384,36 +318,21 @@ private:
 	bool					m_bNotifyNavFailBlocked;
 	bool					m_bNeverLeavePlayerSquad; // Don't leave the player squad unless killed, or removed via Entity I/O. 
 	
-	//-----------------------------------------------------
-	
-#ifdef MAPBASE_VSCRIPT
-	static ScriptHook_t		g_Hook_SelectModel;
-	DECLARE_ENT_SCRIPTDESC();
-#endif
 	DECLARE_DATADESC();
-#ifdef _XBOX
-protected:
-#endif
 	DEFINE_CUSTOM_AI;
 };
 
-//---------------------------------------------------------
-//---------------------------------------------------------
-inline bool CNPC_Citizen::NearCommandGoal()
+inline bool CNPC_BMSSecurity::NearCommandGoal()
 {
 	const float flDistSqr = COMMAND_GOAL_TOLERANCE * COMMAND_GOAL_TOLERANCE;
 	return ( ( GetAbsOrigin() - GetCommandGoal() ).LengthSqr() <= flDistSqr );
 }
 
-//---------------------------------------------------------
-//---------------------------------------------------------
-inline bool CNPC_Citizen::VeryFarFromCommandGoal()
+inline bool CNPC_BMSSecurity::VeryFarFromCommandGoal()
 {
 	const float flDistSqr = (12*50) * (12*50);
 	return ( ( GetAbsOrigin() - GetCommandGoal() ).LengthSqr() > flDistSqr );
 }
-
-
 
 //==============================================================================
 // CITIZEN PLAYER-RESPONSE SYSTEM
@@ -422,9 +341,9 @@ inline bool CNPC_Citizen::VeryFarFromCommandGoal()
 //		 It has been superseded by the ai_eventresponse system.
 //
 //==============================================================================
-#define CITIZEN_RESPONSE_DISTANCE			768			// Maximum distance for responding citizens
-#define CITIZEN_RESPONSE_REFIRE_TIME		15.0		// Time after giving a response before giving any more
-#define CITIZEN_RESPONSE_GIVEUP_TIME		4.0			// Time after a response trigger was fired before discarding it without responding
+#define BMSSEC_RESPONSE_DISTANCE			768			// Maximum distance for responding citizens
+#define BMSSEC_RESPONSE_REFIRE_TIME		15.0		// Time after giving a response before giving any more
+#define BMSSEC_RESPONSE_GIVEUP_TIME		4.0			// Time after a response trigger was fired before discarding it without responding
 
 enum citizenresponses_t
 {
@@ -434,7 +353,7 @@ enum citizenresponses_t
 
 	// Add new responses here
 
-	MAX_CITIZEN_RESPONSES,
+	MAX_BMSSEC_RESPONSES,
 };
 
 //-------------------------------------
@@ -458,7 +377,7 @@ public:
 	void 	InputResponseVitalNPC( inputdata_t &inputdata );
 
 private:
-	float	m_flResponseAddedTime[ MAX_CITIZEN_RESPONSES ];		// Time at which the response was added. 0 if we have no response.
+	float	m_flResponseAddedTime[ MAX_BMSSEC_RESPONSES ];		// Time at which the response was added. 0 if we have no response.
 	float	m_flNextResponseTime;
 };
 
@@ -476,4 +395,4 @@ CCitizenResponseSystem	*GetCitizenResponse();
 
 //-----------------------------------------------------------------------------
 
-#endif	//NPC_CITIZEN_H
+#endif	//NPC_BMSSEC_H
