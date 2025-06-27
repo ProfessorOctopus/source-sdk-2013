@@ -2,7 +2,6 @@
 //
 // Purpose: Implements health kits and wall mounted health chargers.
 //
-// $NoKeywords: $
 //=============================================================================//
 
 #include "cbase.h"
@@ -11,290 +10,9 @@
 #include "items.h"
 #include "in_buttons.h"
 #include "engine/IEngineSound.h"
-
-// memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVar	sk_healthkit( "sk_healthkit","0" );		
-ConVar	sk_healthvial( "sk_healthvial","0" );		
 ConVar	sk_healthcharger( "sk_healthcharger","0" );		
-
-//-----------------------------------------------------------------------------
-// Small health kit. Heals the player when picked up.
-//-----------------------------------------------------------------------------
-class CHealthKit : public CItem
-{
-public:
-	DECLARE_CLASS( CHealthKit, CItem );
-
-	void Spawn( void );
-	void Precache( void );
-	bool MyTouch( CBasePlayer *pPlayer );
-
-#ifdef MAPBASE
-	float GetItemAmount() { return sk_healthkit.GetFloat() * m_flHealthMultiplier; }
-
-	void	InputSetHealthMultiplier( inputdata_t &inputdata ) { m_flHealthMultiplier = inputdata.value.Float(); }
-	float	m_flHealthMultiplier = 1.0f;
-
-	DECLARE_DATADESC();
-#endif
-};
-
-LINK_ENTITY_TO_CLASS( item_healthkit, CHealthKit );
-PRECACHE_REGISTER(item_healthkit);
-
-#ifdef MAPBASE
-BEGIN_DATADESC( CHealthKit )
-
-	DEFINE_KEYFIELD( m_flHealthMultiplier, FIELD_FLOAT, "HealthMultiplier" ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetHealthMultiplier", InputSetHealthMultiplier ),
-
-END_DATADESC()
-#endif
-
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CHealthKit::Spawn( void )
-{
-	Precache();
-	SetModel( "models/items/healthkit.mdl" );
-
-	BaseClass::Spawn();
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CHealthKit::Precache( void )
-{
-	PrecacheModel("models/items/healthkit.mdl");
-
-	PrecacheScriptSound( "HealthKit.Touch" );
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *pPlayer - 
-// Output : 
-//-----------------------------------------------------------------------------
-bool CHealthKit::MyTouch( CBasePlayer *pPlayer )
-{
-#ifdef MAPBASE
-	if ( pPlayer->TakeHealth( GetItemAmount(), DMG_GENERIC ) )
-#else
-	if ( pPlayer->TakeHealth( sk_healthkit.GetFloat(), DMG_GENERIC ) )
-#endif
-	{
-		CSingleUserRecipientFilter user( pPlayer );
-		user.MakeReliable();
-
-		UserMessageBegin( user, "ItemPickup" );
-			WRITE_STRING( GetClassname() );
-		MessageEnd();
-
-		CPASAttenuationFilter filter( pPlayer, "HealthKit.Touch" );
-		EmitSound( filter, pPlayer->entindex(), "HealthKit.Touch" );
-
-		if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_YES )
-		{
-			Respawn();
-		}
-		else
-		{
-			UTIL_Remove(this);	
-		}
-
-		return true;
-	}
-
-	return false;
-}
-
-//-----------------------------------------------------------------------------
-// Small dynamically dropped health kit
-//-----------------------------------------------------------------------------
-
-class CHealthVial : public CItem
-{
-public:
-	DECLARE_CLASS( CHealthVial, CItem );
-
-	void Spawn( void )
-	{
-		Precache();
-		SetModel( "models/healthvial.mdl" );
-
-		BaseClass::Spawn();
-	}
-
-	void Precache( void )
-	{
-		PrecacheModel("models/healthvial.mdl");
-
-		PrecacheScriptSound( "HealthVial.Touch" );
-	}
-
-	bool MyTouch( CBasePlayer *pPlayer )
-	{
-#ifdef MAPBASE
-		if ( pPlayer->TakeHealth( GetItemAmount(), DMG_GENERIC ) )
-#else
-		if ( pPlayer->TakeHealth( sk_healthvial.GetFloat(), DMG_GENERIC ) )
-#endif
-		{
-			CSingleUserRecipientFilter user( pPlayer );
-			user.MakeReliable();
-
-			UserMessageBegin( user, "ItemPickup" );
-				WRITE_STRING( GetClassname() );
-			MessageEnd();
-
-			CPASAttenuationFilter filter( pPlayer, "HealthVial.Touch" );
-			EmitSound( filter, pPlayer->entindex(), "HealthVial.Touch" );
-
-			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_YES )
-			{
-				Respawn();
-			}
-			else
-			{
-				UTIL_Remove(this);	
-			}
-
-			return true;
-		}
-
-		return false;
-	}
-	
-#ifdef MAPBASE
-	float GetItemAmount() { return sk_healthvial.GetFloat() * m_flHealthMultiplier; }
-
-	void	InputSetHealthMultiplier( inputdata_t &inputdata ) { m_flHealthMultiplier = inputdata.value.Float(); }
-	float	m_flHealthMultiplier = 1.0f;
-
-	DECLARE_DATADESC();
-#endif
-};
-
-LINK_ENTITY_TO_CLASS( item_healthvial, CHealthVial );
-PRECACHE_REGISTER( item_healthvial );
-
-#ifdef MAPBASE
-BEGIN_DATADESC( CHealthVial )
-
-	DEFINE_KEYFIELD( m_flHealthMultiplier, FIELD_FLOAT, "HealthMultiplier" ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetHealthMultiplier", InputSetHealthMultiplier ),
-
-END_DATADESC()
-
-
-//-----------------------------------------------------------------------------
-// Small health kit. Heals the player when picked up.
-//-----------------------------------------------------------------------------
-class CHealthKitCustom : public CItem
-{
-public:
-	DECLARE_CLASS( CHealthKitCustom, CItem );
-	CHealthKitCustom();
-
-	void Spawn( void );
-	void Precache( void );
-	bool MyTouch( CBasePlayer *pPlayer );
-
-	float GetItemAmount() { return m_flHealthAmount; }
-
-	void	InputSetHealthAmount( inputdata_t &inputdata ) { m_flHealthAmount = inputdata.value.Float(); }
-
-	float	m_flHealthAmount;
-	string_t	m_iszTouchSound;
-
-	DECLARE_DATADESC();
-};
-
-LINK_ENTITY_TO_CLASS( item_healthkit_custom, CHealthKitCustom );
-
-#ifdef MAPBASE
-BEGIN_DATADESC( CHealthKitCustom )
-
-	DEFINE_KEYFIELD( m_flHealthAmount, FIELD_FLOAT, "HealthAmount" ),
-	DEFINE_KEYFIELD( m_iszTouchSound, FIELD_STRING, "TouchSound" ),
-
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetHealthAmount", InputSetHealthAmount ),
-
-END_DATADESC()
-#endif
-
-
-CHealthKitCustom::CHealthKitCustom()
-{
-	SetModelName( AllocPooledString( "models/items/healthkit.mdl" ) );
-	m_flHealthAmount = sk_healthkit.GetFloat();
-	m_iszTouchSound = AllocPooledString( "HealthKit.Touch" );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CHealthKitCustom::Spawn( void )
-{
-	Precache();
-	SetModel( STRING( GetModelName() ) );
-
-	BaseClass::Spawn();
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CHealthKitCustom::Precache( void )
-{
-	PrecacheModel( STRING( GetModelName() ) );
-
-	PrecacheScriptSound( STRING( m_iszTouchSound ) );
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *pPlayer - 
-// Output : 
-//-----------------------------------------------------------------------------
-bool CHealthKitCustom::MyTouch( CBasePlayer *pPlayer )
-{
-	if ( pPlayer->TakeHealth( GetItemAmount(), DMG_GENERIC ) )
-	{
-		CSingleUserRecipientFilter user( pPlayer );
-		user.MakeReliable();
-
-		UserMessageBegin( user, "ItemPickup" );
-			WRITE_STRING( GetClassname() );
-		MessageEnd();
-
-		CPASAttenuationFilter filter( pPlayer, STRING( m_iszTouchSound ) );
-		EmitSound( filter, pPlayer->entindex(), STRING( m_iszTouchSound ) );
-
-		if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_YES )
-		{
-			Respawn();
-		}
-		else
-		{
-			UTIL_Remove(this);	
-		}
-
-		return true;
-	}
-
-	return false;
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // Wall mounted health kit. Heals the player when used.
@@ -333,7 +51,6 @@ LINK_ENTITY_TO_CLASS(func_healthcharger, CWallHealth);
 
 
 BEGIN_DATADESC( CWallHealth )
-
 	DEFINE_FIELD( m_flNextCharge, FIELD_TIME),
 	DEFINE_FIELD( m_iReactivate, FIELD_INTEGER),
 	DEFINE_FIELD( m_iJuice, FIELD_INTEGER),
@@ -345,18 +62,10 @@ BEGIN_DATADESC( CWallHealth )
 	// Function Pointers
 	DEFINE_FUNCTION( Off ),
 	DEFINE_FUNCTION( Recharge ),
-
 	DEFINE_OUTPUT( m_OnPlayerUse, "OnPlayerUse" ),
 	DEFINE_OUTPUT( m_OutRemainingHealth, "OutRemainingHealth"),
-
 END_DATADESC()
 
-
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *pkvd - 
-//-----------------------------------------------------------------------------
 bool CWallHealth::KeyValue(  const char *szKeyName, const char *szValue )
 {
 	if (FStrEq(szKeyName, "style") ||
@@ -372,14 +81,9 @@ bool CWallHealth::KeyValue(  const char *szKeyName, const char *szValue )
 		m_iReactivate = atoi(szValue);
 		return(true);
 	}
-
 	return(BaseClass::KeyValue( szKeyName, szValue ));
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CWallHealth::Spawn(void)
 {
 	Precache( );
@@ -390,9 +94,7 @@ void CWallHealth::Spawn(void)
 	SetModel( STRING( GetModelName() ) );
 
 	m_iJuice = sk_healthcharger.GetFloat();
-
 	m_nState = 0;	
-	
 	m_iCaps	= FCAP_CONTINUOUS_USE;
 
 	CreateVPhysics();
@@ -412,17 +114,12 @@ int CWallHealth::DrawDebugTextOverlays(void)
 	return text_offset;
 }
 
-//-----------------------------------------------------------------------------
-
 bool CWallHealth::CreateVPhysics(void)
 {
 	VPhysicsInitStatic();
 	return true;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CWallHealth::Precache(void)
 {
 	PrecacheScriptSound( "WallHealth.Deny" );
@@ -431,14 +128,6 @@ void CWallHealth::Precache(void)
 	PrecacheScriptSound( "WallHealth.Recharge" );
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *pActivator - 
-//			*pCaller - 
-//			useType - 
-//			value - 
-//-----------------------------------------------------------------------------
 void CWallHealth::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 { 
 	// Make sure that we have a caller
@@ -526,10 +215,6 @@ void CWallHealth::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE u
 	m_flNextCharge = gpGlobals->curtime + 0.1;
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CWallHealth::Recharge(void)
 {
 	EmitSound( "WallHealth.Recharge" );
@@ -538,10 +223,6 @@ void CWallHealth::Recharge(void)
 	SetThink( NULL );
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CWallHealth::Off(void)
 {
 	// Stop looping sound.
@@ -686,9 +367,7 @@ bool CNewWallHealth::KeyValue(  const char *szKeyName, const char *szValue )
 }
 
 #ifdef MAPBASE
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
+
 void CNewWallHealth::SetInitialCharge( void )
 {
 	if ( m_iMaxJuice != 0 )
@@ -709,10 +388,6 @@ float CNewWallHealth::MaxJuice()	const
 }
 #endif
 
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CNewWallHealth::Spawn(void)
 {
 	Precache( );
@@ -779,17 +454,12 @@ int CNewWallHealth::DrawDebugTextOverlays(void)
 	return text_offset;
 }
 
-//-----------------------------------------------------------------------------
-
 bool CNewWallHealth::CreateVPhysics(void)
 {
 	VPhysicsInitStatic();
 	return true;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CNewWallHealth::Precache(void)
 {
 #ifdef MAPBASE
@@ -832,10 +502,6 @@ void CNewWallHealth::StudioFrameAdvance( void )
 }
 
 #ifdef MAPBASE
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : newJuice - 
-//-----------------------------------------------------------------------------
 void CNewWallHealth::UpdateJuice( int newJuice )
 {
 	bool reduced = newJuice < m_iJuice;
@@ -887,13 +553,6 @@ void CNewWallHealth::InputSetChargeNoMax( inputdata_t &inputdata )
 }
 #endif
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *pActivator - 
-//			*pCaller - 
-//			useType - 
-//			value - 
-//-----------------------------------------------------------------------------
 void CNewWallHealth::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 { 
 	// Make sure that we have a caller
@@ -932,7 +591,6 @@ void CNewWallHealth::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYP
 
 	// if the player doesn't have the suit, or there is no juice left, make the deny noise.
 	// disabled HEV suit dependency for now.
-	//if ((m_iJuice <= 0) || (!(pActivator->m_bWearingSuit)))
 	if (m_iJuice <= 0)
 	{
 		if (m_flSoundTime <= gpGlobals->curtime)
@@ -961,7 +619,6 @@ void CNewWallHealth::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYP
 	SetThink( &CNewWallHealth::Off );
 
 	// Time to recharge yet?
-
 	if (m_flNextCharge >= gpGlobals->curtime)
 		return;
 
@@ -1007,10 +664,6 @@ void CNewWallHealth::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYP
 	m_flNextCharge = gpGlobals->curtime + 0.1;
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CNewWallHealth::Recharge(void)
 {
 	EmitSound( "WallHealth.Recharge" );
@@ -1030,10 +683,6 @@ void CNewWallHealth::Recharge(void)
 	SetThink( NULL );
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CNewWallHealth::Off(void)
 {
 	// Stop looping sound.
@@ -1060,4 +709,3 @@ void CNewWallHealth::Off(void)
 			SetThink( NULL );
 	}
 }
-

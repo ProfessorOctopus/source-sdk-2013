@@ -21,42 +21,53 @@ public:
 	DECLARE_CLASS( CItemAmmo, CItem );
 	DECLARE_DATADESC();
 
-	int ITEM_GiveAmmo( CBasePlayer *pPlayer, float flCount, const char *pszAmmoName, bool bSuppressSound = false )
+	int ITEM_GiveAmmo(CBasePlayer* pPlayer, float AmmoCount, const char* pszAmmoName)
 	{
 		int iAmmoType = GetAmmoDef()->Index(pszAmmoName);
 		if (iAmmoType == -1)
 		{
-			Msg("ERROR: Attempting to give unknown ammo type (%s)\n",pszAmmoName);
+			Msg("ERROR: Attempting to give unknown ammo type (%s)\n", pszAmmoName);
 			return 0;
 		}
-
-		flCount *= g_pGameRules->GetAmmoQuantityScale(iAmmoType);
-
-		// Don't give out less than 1 of anything.
-		flCount = MAX( 1.0f, flCount );
-
-		// Mapper-specific ammo multiplier.
-		// If it results in 0, the ammo will simply be ignored.
-		// If the ammo multiplier is negative, assume it's actually a direct number to override with.
-		if (m_flAmmoMultiplier != 1.0f)
-		{
-			if (m_flAmmoMultiplier >= 0)
-				flCount *= m_flAmmoMultiplier;
-			else
-				flCount = -m_flAmmoMultiplier;
-		}
-		return pPlayer->GiveAmmo( flCount, iAmmoType, bSuppressSound );
+		return pPlayer->GiveAmmo(AmmoCount, iAmmoType);
 	}
-	void	InputSetAmmoMultiplier( inputdata_t &inputdata ) { m_flAmmoMultiplier = inputdata.value.Float(); }
-	float m_flAmmoMultiplier = 1.0f;
 };
 
 #define CItem CItemAmmo
 
+extern int gEvilImpulse101;
+
+//Convar
+extern ConVar sk_battery;
+extern ConVar sk_healthkit;
+extern ConVar sk_healthvial;
+extern ConVar sk_health_max;
+extern ConVar sk_battery_max;
+extern ConVar sk_pickup_pistol;
+extern ConVar sk_max_pistol;
+extern ConVar sk_pickup_smg1;
+extern ConVar sk_max_smg1;
+extern ConVar sk_pickup_ar2;
+extern ConVar sk_max_ar2;
+extern ConVar sk_pickup_357;
+extern ConVar sk_max_357;
+extern ConVar sk_pickup_xbow;
+extern ConVar sk_max_xbow;
+extern ConVar sk_pickup_flare;
+extern ConVar sk_max_flare;
+extern ConVar sk_pickup_rpg;
+extern ConVar sk_max_rpg;
+extern ConVar sk_pickup_smg1_gren;
+extern ConVar sk_max_smg1_gren;
+extern ConVar sk_pickup_sniper;
+extern ConVar sk_max_sniper;
+extern ConVar sk_pickup_buckshot;
+extern ConVar sk_max_buckshot;
+extern ConVar sk_pickup_ar2_gren;
+extern ConVar sk_max_ar2_gren;
+
 BEGIN_DATADESC( CItemAmmo )
 	DEFINE_KEYFIELD(m_flPickUpAmount, FIELD_FLOAT, "itemval"),
-	DEFINE_KEYFIELD( m_flAmmoMultiplier,	FIELD_FLOAT, "AmmoMultiplier" ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetAmmoMultiplier", InputSetAmmoMultiplier ),
 END_DATADESC()
 
 class CItemBattery : public CItem
@@ -80,17 +91,16 @@ public:
 
 	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
 	{
-		extern ConVar sk_battery;
 		CBasePlayer* pPlayer = static_cast<CBasePlayer*>(pActivator);
 
-		if (pPlayer->ArmorValue() < MAX_NORMAL_BATTERY && pPlayer->IsSuitEquipped())// Player can pickup battery with suit.
+		if (pPlayer->ArmorValue() < sk_battery_max.GetFloat() && pPlayer->IsSuitEquipped())// Player can pickup battery with suit.
 		{
 			CSingleUserRecipientFilter user(pPlayer);
 			user.MakeReliable();
 
 			// Set custom Armor Value in Hammer to whatever but if Value is 0 then use default Armor Value from Skill.cge
-			if (m_flPickUpAmount == 0) { pPlayer->IncrementArmorValue(sk_battery.GetFloat(), MAX_NORMAL_BATTERY); }
-			else { pPlayer->IncrementArmorValue(m_flPickUpAmount, MAX_NORMAL_BATTERY); }
+			if (m_flPickUpAmount == 0) { pPlayer->IncrementArmorValue(sk_battery.GetFloat(), sk_battery_max.GetFloat()); }
+			else { pPlayer->IncrementArmorValue(m_flPickUpAmount, sk_battery_max.GetFloat()); }
 
 			if (m_PickupSnd != NULL_STRING)
 			{
@@ -104,10 +114,13 @@ public:
 				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
 				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
 			}
+
 			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this);}
+			if (gEvilImpulse101){UTIL_Remove(this);}
+
 			m_OnCollected.FireOutput(pActivator, this);
 		}
-		else if (MAX_NORMAL_BATTERY)// When suit is full, player can pickup item as physics prop.
+		else if (sk_battery_max.GetFloat())// When suit is full, player can pickup item as physics prop.
 		{
 			pPlayer->PickupObject(this);
 			m_OnPickedUp.FireOutput(pActivator, this);
@@ -121,6 +134,156 @@ LINK_ENTITY_TO_CLASS(item_battery, CItemBattery);
 PRECACHE_REGISTER(item_battery);
 
 BEGIN_DATADESC(CItemBattery)
+	DEFINE_KEYFIELD(m_flPickUpAmount, FIELD_FLOAT, "itemval"),
+	DEFINE_KEYFIELD(m_PickupSnd, FIELD_SOUNDNAME, "message"),
+
+	//Output
+	DEFINE_OUTPUT(m_OnCollected, "OnCollected"),
+	DEFINE_OUTPUT(m_OnPickedUp, "OnPickedUp"),
+END_DATADESC()
+
+// ========================================================================
+//	>> HealthVial
+// ========================================================================
+class CHealthVial : public CItem
+{
+public:
+	DECLARE_CLASS(CHealthVial, CItem);
+
+	void Spawn(void)
+	{
+		Precache();
+		SetModel(DefaultOrCustomModel("models/healthvial.mdl"));
+		BaseClass::Spawn();
+	}
+
+	void Precache(void)
+	{
+		PrecacheModel(DefaultOrCustomModel("models/healthvial.mdl"));
+		PrecacheScriptSound("HealthVial.Touch");
+		if (m_PickupSnd != NULL_STRING) { PrecacheScriptSound(STRING(m_PickupSnd)); }
+	}
+
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
+	{
+		CBasePlayer* pPlayer = static_cast<CBasePlayer*>(pActivator);
+
+		if (pPlayer->GetHealth() < sk_health_max.GetFloat())
+		{
+			CSingleUserRecipientFilter user(pPlayer);
+			user.MakeReliable();
+
+			// Set custom Healthkit Value in Hammer to whatever but if Value is 0 then use default Health Value from Skill.cge
+			if (m_flPickUpAmount == 0){pPlayer->TakeHealth(sk_healthvial.GetFloat(), DMG_GENERIC);}
+			else{pPlayer->TakeHealth(m_flPickUpAmount, DMG_GENERIC);}
+
+			if (m_PickupSnd != NULL_STRING)
+			{
+				CPASAttenuationFilter filter(this);
+				EmitSound_t ep;
+				ep.m_pSoundName = (char*)STRING(m_PickupSnd);
+				EmitSound(filter, pPlayer->entindex(), ep);
+			}
+			else
+			{
+				CPASAttenuationFilter filter(pPlayer, "HealthVial.Touch");
+				EmitSound(filter, pPlayer->entindex(), "HealthVial.Touch");
+			}
+
+			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
+			if (gEvilImpulse101) { UTIL_Remove(this); }
+
+			m_OnCollected.FireOutput(pActivator, this);
+		}
+		else if (sk_health_max.GetFloat())// When suit is full, player can pickup item as physics prop.
+		{
+			pPlayer->PickupObject(this);
+			m_OnPickedUp.FireOutput(pActivator, this);
+			return;
+		}
+	}
+	DECLARE_DATADESC();
+};
+
+LINK_ENTITY_TO_CLASS(item_healthvial, CHealthVial);
+PRECACHE_REGISTER(item_healthvial);
+
+BEGIN_DATADESC(CHealthVial)
+	DEFINE_KEYFIELD(m_flPickUpAmount, FIELD_FLOAT, "itemval"),
+	DEFINE_KEYFIELD(m_PickupSnd, FIELD_SOUNDNAME, "message"),
+
+	//Output
+	DEFINE_OUTPUT(m_OnCollected, "OnCollected"),
+	DEFINE_OUTPUT(m_OnPickedUp, "OnPickedUp"),
+END_DATADESC()
+
+// ========================================================================
+//	>> HealthKit
+// ========================================================================
+class CHealthKit : public CItem
+{
+public:
+	DECLARE_CLASS(CHealthKit, CItem);
+
+	void Spawn(void)
+	{
+		Precache();
+		SetModel(DefaultOrCustomModel("models/items/healthkit.mdl"));
+		BaseClass::Spawn();
+	}
+
+	void Precache(void)
+	{
+		PrecacheModel(DefaultOrCustomModel("models/items/healthkit.mdl"));
+		PrecacheScriptSound("HealthKit.Touch");
+		if (m_PickupSnd != NULL_STRING) { PrecacheScriptSound(STRING(m_PickupSnd)); }
+	}
+
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
+	{
+		CBasePlayer* pPlayer = static_cast<CBasePlayer*>(pActivator);
+
+		if (pPlayer->GetHealth() < sk_health_max.GetFloat())
+		{
+			CSingleUserRecipientFilter user(pPlayer);
+			user.MakeReliable();
+
+			// Set custom Healthkit Value in Hammer to whatever but if Value is 0 then use default Health Value from Skill.cge
+			if (m_flPickUpAmount == 0) { pPlayer->TakeHealth(sk_healthkit.GetFloat(), DMG_GENERIC); }
+			else { pPlayer->TakeHealth(m_flPickUpAmount, DMG_GENERIC); }
+
+			if (m_PickupSnd != NULL_STRING)
+			{
+				CPASAttenuationFilter filter(this);
+				EmitSound_t ep;
+				ep.m_pSoundName = (char*)STRING(m_PickupSnd);
+				EmitSound(filter, pPlayer->entindex(), ep);
+			}
+			else
+			{
+				CPASAttenuationFilter filter(pPlayer, "HealthKit.Touch");
+				EmitSound(filter, pPlayer->entindex(), "HealthKit.Touch");
+			}
+
+			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
+			if (gEvilImpulse101) { UTIL_Remove(this); }
+
+			m_OnCollected.FireOutput(pActivator, this);
+		}
+		else if (sk_health_max.GetFloat())// When suit is full, player can pickup item as physics prop.
+		{
+			pPlayer->PickupObject(this);
+			m_OnPickedUp.FireOutput(pActivator, this);
+			return;
+		}
+	}
+	DECLARE_DATADESC();
+};
+
+LINK_ENTITY_TO_CLASS(item_healthkit, CHealthKit);
+PRECACHE_REGISTER(item_healthkit);
+
+BEGIN_DATADESC(CHealthKit)
 	DEFINE_KEYFIELD(m_flPickUpAmount, FIELD_FLOAT, "itemval"),
 	DEFINE_KEYFIELD(m_PickupSnd, FIELD_SOUNDNAME, "message"),
 
@@ -149,57 +312,63 @@ public:
 		PrecacheModel ("models/items/boxsrounds.mdl");
 	}
 
-	bool MyTouch( CBasePlayer *pPlayer )
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_PISTOL, "Pistol"))
+		CBasePlayer* pPlayer = static_cast<CBasePlayer*>(pActivator);
+		
+		// Custom Ammo pickup Values for Hammer and Junk
+		if ((pPlayer->GetAmmoCount("Pistol") < sk_max_pistol.GetFloat())) // If Ammo is under the max carry capacity for this Ammo type then allow collecting.
 		{
-			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
+			if (m_flPickUpAmount == 0)
 			{
-				UTIL_Remove(this);	
+				ITEM_GiveAmmo(pPlayer, sk_pickup_pistol.GetFloat(), "Pistol");
+			}
+			else
+			{
+				ITEM_GiveAmmo(pPlayer, m_flPickUpAmount, "Pistol");
 			}
 
-			return true;
+			if (m_PickupSnd != NULL_STRING)
+			{
+				CPASAttenuationFilter filter(this);
+				EmitSound_t ep;
+				ep.m_pSoundName = (char*)STRING(m_PickupSnd);
+				EmitSound(filter, pPlayer->entindex(), ep);
+			}
+			else
+			{
+				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
+				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+			}
+
+			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
+			if (gEvilImpulse101) { UTIL_Remove(this); }
+
+			m_OnCollected.FireOutput(pActivator, this);
 		}
-		return false;
+		else // If Ammo is full then player can pick this up like a normal prop.
+		{
+			pPlayer->PickupObject(this);
+			m_OnPickedUp.FireOutput(pActivator, this);
+			return;
+		}
 	}
+	DECLARE_DATADESC();
 };
 
 LINK_ENTITY_TO_CLASS(item_box_srounds, CItem_BoxSRounds);
 LINK_ENTITY_TO_CLASS(item_ammo_pistol, CItem_BoxSRounds);
+LINK_ENTITY_TO_CLASS(item_large_box_srounds, CItem_BoxSRounds);
+LINK_ENTITY_TO_CLASS(item_ammo_pistol_large, CItem_BoxSRounds);
 
-// ========================================================================
-//	>> LargeBoxSRounds
-// ========================================================================
-class CItem_LargeBoxSRounds : public CItem
-{
-public:
-	DECLARE_CLASS( CItem_LargeBoxSRounds, CItem );
+BEGIN_DATADESC(CItem_BoxSRounds)
+	DEFINE_KEYFIELD(m_flPickUpAmount, FIELD_FLOAT, "itemval"),
+	DEFINE_KEYFIELD(m_PickupSnd, FIELD_SOUNDNAME, "message"),
 
-	void Spawn( void )
-	{ 
-		Precache( );
-		SetModel( "models/items/boxsrounds.mdl" );
-		BaseClass::Spawn( );
-	}
-	void Precache( void )
-	{
-		PrecacheModel ("models/items/boxsrounds.mdl");
-	}
-	bool MyTouch( CBasePlayer *pPlayer )
-	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_PISTOL_LARGE, "Pistol"))
-		{
-			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
-			{
-				UTIL_Remove(this);	
-			}
-			return true;
-		}
-		return false;
-	}
-};
-LINK_ENTITY_TO_CLASS(item_large_box_srounds, CItem_LargeBoxSRounds);
-LINK_ENTITY_TO_CLASS(item_ammo_pistol_large, CItem_LargeBoxSRounds);
+	//Output
+	DEFINE_OUTPUT(m_OnCollected, "OnCollected"),
+	DEFINE_OUTPUT(m_OnPickedUp, "OnPickedUp"),
+END_DATADESC()
 
 // ========================================================================
 //	>> BoxMRounds
@@ -215,59 +384,69 @@ public:
 		SetModel( "models/items/boxmrounds.mdl");
 		BaseClass::Spawn( );
 	}
+
 	void Precache( void )
 	{
 		PrecacheModel ("models/items/boxmrounds.mdl");
 	}
-	bool MyTouch( CBasePlayer *pPlayer )
+
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_SMG1, "SMG1"))
+		CBasePlayer* pPlayer = static_cast<CBasePlayer*>(pActivator);
+
+		// Custom Ammo pickup Values for Hammer and Junk
+		if ((pPlayer->GetAmmoCount("SMG1") < sk_max_smg1.GetFloat())) // If Ammo is under the max carry capacity for this Ammo type then allow collecting.
 		{
-			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
+			if (m_flPickUpAmount == 0)
 			{
-				UTIL_Remove(this);	
+				ITEM_GiveAmmo(pPlayer, sk_pickup_smg1.GetFloat(), "SMG1");
 			}
-			return true;
+			else
+			{
+				ITEM_GiveAmmo(pPlayer, m_flPickUpAmount, "SMG1");
+			}
+
+			if (m_PickupSnd != NULL_STRING)
+			{
+				CPASAttenuationFilter filter(this);
+				EmitSound_t ep;
+				ep.m_pSoundName = (char*)STRING(m_PickupSnd);
+				EmitSound(filter, pPlayer->entindex(), ep);
+			}
+			else
+			{
+				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
+				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+			}
+
+			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
+			if (gEvilImpulse101) { UTIL_Remove(this); }
+
+			m_OnCollected.FireOutput(pActivator, this);
 		}
-		return false;
+		else // If Ammo is full then player can pick this up like a normal prop.
+		{
+			pPlayer->PickupObject(this);
+			m_OnPickedUp.FireOutput(pActivator, this);
+			return;
+		}
 	}
+	DECLARE_DATADESC();
 };
+
 LINK_ENTITY_TO_CLASS(item_box_mrounds, CItem_BoxMRounds);
 LINK_ENTITY_TO_CLASS(item_ammo_smg1, CItem_BoxMRounds);
+LINK_ENTITY_TO_CLASS(item_large_box_mrounds, CItem_BoxMRounds);
+LINK_ENTITY_TO_CLASS(item_ammo_smg1_large, CItem_BoxMRounds);
 
-// ========================================================================
-//	>> LargeBoxMRounds
-// ========================================================================
-class CItem_LargeBoxMRounds : public CItem
-{
-public:
-	DECLARE_CLASS( CItem_LargeBoxMRounds, CItem );
+BEGIN_DATADESC(CItem_BoxMRounds)
+	DEFINE_KEYFIELD(m_flPickUpAmount, FIELD_FLOAT, "itemval"),
+	DEFINE_KEYFIELD(m_PickupSnd, FIELD_SOUNDNAME, "message"),
 
-	void Spawn( void )
-	{ 
-		Precache( );
-		SetModel( "models/items/boxmrounds.mdl");
-		BaseClass::Spawn( );
-	}
-	void Precache( void )
-	{
-		PrecacheModel ("models/items/boxmrounds.mdl");
-	}
-	bool MyTouch( CBasePlayer *pPlayer )
-	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_SMG1_LARGE, "SMG1"))
-		{
-			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
-			{
-				UTIL_Remove(this);	
-			}
-			return true;
-		}
-		return false;
-	}
-};
-LINK_ENTITY_TO_CLASS(item_large_box_mrounds, CItem_LargeBoxMRounds);
-LINK_ENTITY_TO_CLASS(item_ammo_smg1_large, CItem_LargeBoxMRounds);
+	//Output
+	DEFINE_OUTPUT(m_OnCollected, "OnCollected"),
+	DEFINE_OUTPUT(m_OnPickedUp, "OnPickedUp"),
+END_DATADESC()
 
 // ========================================================================
 //	>> BoxLRounds
@@ -283,60 +462,69 @@ public:
 		SetModel( "models/items/combine_rifle_cartridge01.mdl");
 		BaseClass::Spawn( );
 	}
+
 	void Precache( void )
 	{
 		PrecacheModel ("models/items/combine_rifle_cartridge01.mdl");
 	}
-	bool MyTouch( CBasePlayer *pPlayer )
+
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_AR2, "AR2"))
+		CBasePlayer* pPlayer = static_cast<CBasePlayer*>(pActivator);
+
+		// Custom Ammo pickup Values for Hammer and Junk
+		if ((pPlayer->GetAmmoCount("AR2") < sk_max_ar2.GetFloat())) // If Ammo is under the max carry capacity for this Ammo type then allow collecting.
 		{
-			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
+			if (m_flPickUpAmount == 0)
 			{
-				UTIL_Remove(this);	
-			}	
-			return true;
+				ITEM_GiveAmmo(pPlayer, sk_pickup_ar2.GetFloat(), "AR2");
+			}
+			else
+			{
+				ITEM_GiveAmmo(pPlayer, m_flPickUpAmount, "AR2");
+			}
+
+			if (m_PickupSnd != NULL_STRING)
+			{
+				CPASAttenuationFilter filter(this);
+				EmitSound_t ep;
+				ep.m_pSoundName = (char*)STRING(m_PickupSnd);
+				EmitSound(filter, pPlayer->entindex(), ep);
+			}
+			else
+			{
+				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
+				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+			}
+
+			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
+			if (gEvilImpulse101) { UTIL_Remove(this); }
+
+			m_OnCollected.FireOutput(pActivator, this);
 		}
-		return false;
+		else // If Ammo is full then player can pick this up like a normal prop.
+		{
+			pPlayer->PickupObject(this);
+			m_OnPickedUp.FireOutput(pActivator, this);
+			return;
+		}
 	}
+	DECLARE_DATADESC();
 };
+
 LINK_ENTITY_TO_CLASS(item_box_lrounds, CItem_BoxLRounds);
 LINK_ENTITY_TO_CLASS(item_ammo_ar2, CItem_BoxLRounds);
+LINK_ENTITY_TO_CLASS(item_large_box_lrounds, CItem_BoxLRounds);
+LINK_ENTITY_TO_CLASS(item_ammo_ar2_large, CItem_BoxLRounds);
 
-// ========================================================================
-//	>> LargeBoxLRounds
-// ========================================================================
-class CItem_LargeBoxLRounds : public CItem
-{
-public:
-	DECLARE_CLASS( CItem_LargeBoxLRounds, CItem );
+BEGIN_DATADESC(CItem_BoxLRounds)
+	DEFINE_KEYFIELD(m_flPickUpAmount, FIELD_FLOAT, "itemval"),
+	DEFINE_KEYFIELD(m_PickupSnd, FIELD_SOUNDNAME, "message"),
 
-	void Spawn( void )
-	{ 
-		Precache( );
-		SetModel( "models/items/combine_rifle_cartridge01.mdl");
-		BaseClass::Spawn( );
-	}
-	void Precache( void )
-	{
-		PrecacheModel ("models/items/combine_rifle_cartridge01.mdl");
-	}
-	bool MyTouch( CBasePlayer *pPlayer )
-	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_AR2_LARGE, "AR2"))
-		{
-			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
-			{
-				UTIL_Remove(this);	
-			}	
-			return true;
-		}
-		return false;
-	}
-};
-LINK_ENTITY_TO_CLASS(item_large_box_lrounds, CItem_LargeBoxLRounds);
-LINK_ENTITY_TO_CLASS(item_ammo_ar2_large, CItem_LargeBoxLRounds);
-
+	//Output
+	DEFINE_OUTPUT(m_OnCollected, "OnCollected"),
+	DEFINE_OUTPUT(m_OnPickedUp, "OnPickedUp"),
+END_DATADESC()
 
 // ========================================================================
 //	>> CItem_Box357Rounds
@@ -350,6 +538,7 @@ public:
 	{
 		PrecacheModel ("models/items/357ammo.mdl");
 	}
+
 	void Spawn( void )
 	{ 
 		Precache( );
@@ -357,58 +546,61 @@ public:
 		BaseClass::Spawn( );
 	}
 
-	bool MyTouch( CBasePlayer *pPlayer )
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_357, "357"))
+		CBasePlayer* pPlayer = static_cast<CBasePlayer*>(pActivator);
+
+		// Custom Ammo pickup Values for Hammer and Junk
+		if ((pPlayer->GetAmmoCount("357") < sk_max_357.GetFloat())) // If Ammo is under the max carry capacity for this Ammo type then allow collecting.
 		{
-			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
+			if (m_flPickUpAmount == 0)
 			{
-				UTIL_Remove(this);	
-			}	
-			return true;
-		}
-		return false;
-	}
-};
-LINK_ENTITY_TO_CLASS(item_ammo_357, CItem_Box357Rounds);
-
-
-// ========================================================================
-//	>> CItem_LargeBox357Rounds
-// ========================================================================
-class CItem_LargeBox357Rounds : public CItem
-{
-public:
-	DECLARE_CLASS( CItem_LargeBox357Rounds, CItem );
-
-	void Precache( void )
-	{
-		PrecacheModel ("models/items/357ammobox.mdl");
-	}
-
-	void Spawn( void )
-	{ 
-		Precache( );
-		SetModel( "models/items/357ammobox.mdl");
-		BaseClass::Spawn( );
-	}
-
-	bool MyTouch( CBasePlayer *pPlayer )
-	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_357_LARGE, "357"))
-		{
-			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
-			{
-				UTIL_Remove(this);	
+				ITEM_GiveAmmo(pPlayer, sk_pickup_357.GetFloat(), "357");
 			}
-			return true;
+			else
+			{
+				ITEM_GiveAmmo(pPlayer, m_flPickUpAmount, "357");
+			}
+
+			if (m_PickupSnd != NULL_STRING)
+			{
+				CPASAttenuationFilter filter(this);
+				EmitSound_t ep;
+				ep.m_pSoundName = (char*)STRING(m_PickupSnd);
+				EmitSound(filter, pPlayer->entindex(), ep);
+			}
+			else
+			{
+				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
+				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+			}
+
+			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
+			if (gEvilImpulse101) { UTIL_Remove(this); }
+
+			m_OnCollected.FireOutput(pActivator, this);
 		}
-		return false;
+		else // If Ammo is full then player can pick this up like a normal prop.
+		{
+			pPlayer->PickupObject(this);
+			m_OnPickedUp.FireOutput(pActivator, this);
+			return;
+		}
 	}
+	DECLARE_DATADESC();
 };
 
-LINK_ENTITY_TO_CLASS(item_ammo_357_large, CItem_LargeBox357Rounds);
+LINK_ENTITY_TO_CLASS(item_ammo_357, CItem_Box357Rounds);
+LINK_ENTITY_TO_CLASS(item_ammo_357_large, CItem_Box357Rounds);
 
+BEGIN_DATADESC(CItem_Box357Rounds)
+	DEFINE_KEYFIELD(m_flPickUpAmount, FIELD_FLOAT, "itemval"),
+	DEFINE_KEYFIELD(m_PickupSnd, FIELD_SOUNDNAME, "message"),
+
+	//Output
+	DEFINE_OUTPUT(m_OnCollected, "OnCollected"),
+	DEFINE_OUTPUT(m_OnPickedUp, "OnPickedUp"),
+END_DATADESC()
 
 // ========================================================================
 //	>> CItem_BoxXBowRounds
@@ -430,21 +622,60 @@ public:
 		BaseClass::Spawn( );
 	}
 
-	bool MyTouch( CBasePlayer *pPlayer )
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_CROSSBOW, "XBowBolt" ))
+		CBasePlayer* pPlayer = static_cast<CBasePlayer*>(pActivator);
+
+		// Custom Ammo pickup Values for Hammer and Junk
+		if ((pPlayer->GetAmmoCount("XBowBolt") < sk_max_xbow.GetFloat())) // If Ammo is under the max carry capacity for this Ammo type then allow collecting.
 		{
-			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
+			if (m_flPickUpAmount == 0)
 			{
-				UTIL_Remove(this);	
-			}	
-			return true;
+				ITEM_GiveAmmo(pPlayer, sk_pickup_xbow.GetFloat(), "XBowBolt");
+			}
+			else
+			{
+				ITEM_GiveAmmo(pPlayer, m_flPickUpAmount, "XBowBolt");
+			}
+
+			if (m_PickupSnd != NULL_STRING)
+			{
+				CPASAttenuationFilter filter(this);
+				EmitSound_t ep;
+				ep.m_pSoundName = (char*)STRING(m_PickupSnd);
+				EmitSound(filter, pPlayer->entindex(), ep);
+			}
+			else
+			{
+				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
+				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+			}
+
+			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
+			if (gEvilImpulse101) { UTIL_Remove(this); }
+
+			m_OnCollected.FireOutput(pActivator, this);
 		}
-		return false;
+		else // If Ammo is full then player can pick this up like a normal prop.
+		{
+			pPlayer->PickupObject(this);
+			m_OnPickedUp.FireOutput(pActivator, this);
+			return;
+		}
 	}
+	DECLARE_DATADESC();
 };
+
 LINK_ENTITY_TO_CLASS(item_ammo_crossbow, CItem_BoxXBowRounds);
 
+BEGIN_DATADESC(CItem_BoxXBowRounds)
+	DEFINE_KEYFIELD(m_flPickUpAmount, FIELD_FLOAT, "itemval"),
+	DEFINE_KEYFIELD(m_PickupSnd, FIELD_SOUNDNAME, "message"),
+
+	//Output
+	DEFINE_OUTPUT(m_OnCollected, "OnCollected"),
+	DEFINE_OUTPUT(m_OnPickedUp, "OnPickedUp"),
+END_DATADESC()
 
 // ========================================================================
 //	>> FlareRound
@@ -460,59 +691,67 @@ public:
 		SetModel( "models/items/flare.mdl");
 		BaseClass::Spawn( );
 	}
+
 	void Precache( void )
 	{
 		PrecacheModel ("models/items/flare.mdl");
 	}
-	bool MyTouch( CBasePlayer *pPlayer )
+
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
 	{
-		if (ITEM_GiveAmmo( pPlayer, 1, "FlareRound"))
+		CBasePlayer* pPlayer = static_cast<CBasePlayer*>(pActivator);
+
+		// Custom Ammo pickup Values for Hammer and Junk
+		if ((pPlayer->GetAmmoCount("Flare") < sk_max_flare.GetFloat())) // If Ammo is under the max carry capacity for this Ammo type then allow collecting.
 		{
-			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
+			if (m_flPickUpAmount == 0)
 			{
-				UTIL_Remove(this);	
+				ITEM_GiveAmmo(pPlayer, sk_pickup_flare.GetFloat(), "Flare");
 			}
-			return true;
+			else
+			{
+				ITEM_GiveAmmo(pPlayer, m_flPickUpAmount, "Flare");
+			}
+
+			if (m_PickupSnd != NULL_STRING)
+			{
+				CPASAttenuationFilter filter(this);
+				EmitSound_t ep;
+				ep.m_pSoundName = (char*)STRING(m_PickupSnd);
+				EmitSound(filter, pPlayer->entindex(), ep);
+			}
+			else
+			{
+				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
+				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+			}
+
+			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
+			if (gEvilImpulse101) { UTIL_Remove(this); }
+
+			m_OnCollected.FireOutput(pActivator, this);
 		}
-		return false;
+		else // If Ammo is full then player can pick this up like a normal prop.
+		{
+			pPlayer->PickupObject(this);
+			m_OnPickedUp.FireOutput(pActivator, this);
+			return;
+		}
 	}
+	DECLARE_DATADESC();
 };
+
 LINK_ENTITY_TO_CLASS(item_flare_round, CItem_FlareRound);
+LINK_ENTITY_TO_CLASS(item_box_flare_rounds, CItem_FlareRound);
 
-// ========================================================================
-//	>> BoxFlareRounds
-// ========================================================================
-#define SIZE_BOX_FLARE_ROUNDS 5
+BEGIN_DATADESC(CItem_FlareRound)
+	DEFINE_KEYFIELD(m_flPickUpAmount, FIELD_FLOAT, "itemval"),
+	DEFINE_KEYFIELD(m_PickupSnd, FIELD_SOUNDNAME, "message"),
 
-class CItem_BoxFlareRounds : public CItem
-{
-public:
-	DECLARE_CLASS( CItem_BoxFlareRounds, CItem );
-
-	void Spawn( void )
-	{ 
-		Precache( );
-		SetModel( "models/items/boxflares.mdl");
-		BaseClass::Spawn( );
-	}
-	void Precache( void )
-	{
-		PrecacheModel ("models/items/boxflares.mdl");
-	}
-	bool MyTouch( CBasePlayer *pPlayer )
-	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_BOX_FLARE_ROUNDS, "FlareRound"))
-		{
-			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
-			{
-				UTIL_Remove(this);	
-			}
-			return true;
-		}
-		return false;
-	}
-};
-LINK_ENTITY_TO_CLASS(item_box_flare_rounds, CItem_BoxFlareRounds);
+	//Output
+	DEFINE_OUTPUT(m_OnCollected, "OnCollected"),
+	DEFINE_OUTPUT(m_OnPickedUp, "OnPickedUp"),
+END_DATADESC()
 
 // ========================================================================
 // RPG Round
@@ -528,33 +767,75 @@ public:
 		SetModel( "models/weapons/w_missile_closed.mdl");
 		BaseClass::Spawn( );
 	}
+
 	void Precache( void )
 	{
 		PrecacheModel ("models/weapons/w_missile_closed.mdl");
 	}
-	bool MyTouch( CBasePlayer *pPlayer )
+
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_RPG_ROUND, "RPG_Round"))
+		CBasePlayer* pPlayer = static_cast<CBasePlayer*>(pActivator);
+
+		// Custom Ammo pickup Values for Hammer and Junk
+		if ((pPlayer->GetAmmoCount("RPG_Round") < sk_max_rpg.GetFloat())) // If Ammo is under the max carry capacity for this Ammo type then allow collecting.
 		{
-			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
+			if (m_flPickUpAmount == 0)
 			{
-				UTIL_Remove(this);	
-			}	
-			return true;
+				ITEM_GiveAmmo(pPlayer, sk_pickup_rpg.GetFloat(), "RPG_Round");
+			}
+			else
+			{
+				ITEM_GiveAmmo(pPlayer, m_flPickUpAmount, "RPG_Round");
+			}
+
+			if (m_PickupSnd != NULL_STRING)
+			{
+				CPASAttenuationFilter filter(this);
+				EmitSound_t ep;
+				ep.m_pSoundName = (char*)STRING(m_PickupSnd);
+				EmitSound(filter, pPlayer->entindex(), ep);
+			}
+			else
+			{
+				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
+				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+			}
+
+			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
+			if (gEvilImpulse101) { UTIL_Remove(this); }
+
+			m_OnCollected.FireOutput(pActivator, this);
 		}
-		return false;
+		else // If Ammo is full then player can pick this up like a normal prop.
+		{
+			pPlayer->PickupObject(this);
+			m_OnPickedUp.FireOutput(pActivator, this);
+			return;
+		}
 	}
+	DECLARE_DATADESC();
 };
+
 LINK_ENTITY_TO_CLASS( item_ml_grenade, CItem_RPG_Round );
 LINK_ENTITY_TO_CLASS( item_rpg_round, CItem_RPG_Round );
 
+BEGIN_DATADESC(CItem_RPG_Round)
+	DEFINE_KEYFIELD(m_flPickUpAmount, FIELD_FLOAT, "itemval"),
+	DEFINE_KEYFIELD(m_PickupSnd, FIELD_SOUNDNAME, "message"),
+
+	//Output
+	DEFINE_OUTPUT(m_OnCollected, "OnCollected"),
+	DEFINE_OUTPUT(m_OnPickedUp, "OnPickedUp"),
+END_DATADESC()
+
 // ========================================================================
-//	>> AR2_Grenade
+//	>> CItem_SMG1AltFireRound
 // ========================================================================
-class CItem_AR2_Grenade : public CItem
+class CItem_SMG1AltFireRound : public CItem
 {
 public:
-	DECLARE_CLASS( CItem_AR2_Grenade, CItem );
+	DECLARE_CLASS(CItem_SMG1AltFireRound, CItem );
 
 	void Spawn( void )
 	{ 
@@ -562,31 +843,71 @@ public:
 		SetModel( "models/items/ar2_grenade.mdl");
 		BaseClass::Spawn( );
 	}
+
 	void Precache( void )
 	{
 		PrecacheModel ("models/items/ar2_grenade.mdl");
 	}
-	bool MyTouch( CBasePlayer *pPlayer )
+
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_SMG1_GRENADE, "SMG1_Grenade"))
+		CBasePlayer* pPlayer = static_cast<CBasePlayer*>(pActivator);
+
+		// Custom Ammo pickup Values for Hammer and Junk
+		if ((pPlayer->GetAmmoCount("SMG1_Grenade") < sk_max_smg1_gren.GetFloat())) // If Ammo is under the max carry capacity for this Ammo type then allow collecting.
 		{
-			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
+			if (m_flPickUpAmount == 0)
 			{
-				UTIL_Remove(this);	
-			}	
-			return true;
+				ITEM_GiveAmmo(pPlayer, sk_pickup_smg1_gren.GetFloat(), "SMG1_Grenade");
+			}
+			else
+			{
+				ITEM_GiveAmmo(pPlayer, m_flPickUpAmount, "SMG1_Grenade");
+			}
+
+			if (m_PickupSnd != NULL_STRING)
+			{
+				CPASAttenuationFilter filter(this);
+				EmitSound_t ep;
+				ep.m_pSoundName = (char*)STRING(m_PickupSnd);
+				EmitSound(filter, pPlayer->entindex(), ep);
+			}
+			else
+			{
+				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
+				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+			}
+
+			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
+			if (gEvilImpulse101) { UTIL_Remove(this); }
+
+			m_OnCollected.FireOutput(pActivator, this);
 		}
-		return false;
+		else // If Ammo is full then player can pick this up like a normal prop.
+		{
+			pPlayer->PickupObject(this);
+			m_OnPickedUp.FireOutput(pActivator, this);
+			return;
+		}
 	}
+	DECLARE_DATADESC();
 };
-LINK_ENTITY_TO_CLASS(item_ar2_grenade, CItem_AR2_Grenade);
-LINK_ENTITY_TO_CLASS(item_ammo_smg1_grenade, CItem_AR2_Grenade);
+
+LINK_ENTITY_TO_CLASS(item_ar2_grenade, CItem_SMG1AltFireRound);
+LINK_ENTITY_TO_CLASS(item_ammo_smg1_grenade, CItem_SMG1AltFireRound);
+
+BEGIN_DATADESC(CItem_SMG1AltFireRound)
+	DEFINE_KEYFIELD(m_flPickUpAmount, FIELD_FLOAT, "itemval"),
+	DEFINE_KEYFIELD(m_PickupSnd, FIELD_SOUNDNAME, "message"),
+
+	//Output
+	DEFINE_OUTPUT(m_OnCollected, "OnCollected"),
+	DEFINE_OUTPUT(m_OnPickedUp, "OnPickedUp"),
+END_DATADESC()
 
 // ========================================================================
 //	>> BoxSniperRounds
 // ========================================================================
-#define SIZE_BOX_SNIPER_ROUNDS 10
-
 class CItem_BoxSniperRounds : public CItem
 {
 public:
@@ -598,25 +919,66 @@ public:
 		SetModel( "models/items/boxsniperrounds.mdl");
 		BaseClass::Spawn( );
 	}
+
 	void Precache( void )
 	{
 		PrecacheModel ("models/items/boxsniperrounds.mdl");
 	}
-	bool MyTouch( CBasePlayer *pPlayer )
+
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_BOX_SNIPER_ROUNDS, "SniperRound"))
+		CBasePlayer* pPlayer = static_cast<CBasePlayer*>(pActivator);
+
+		// Custom Ammo pickup Values for Hammer and Junk
+		if ((pPlayer->GetAmmoCount("Sniper") < sk_max_sniper.GetFloat())) // If Ammo is under the max carry capacity for this Ammo type then allow collecting.
 		{
-			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
+			if (m_flPickUpAmount == 0)
 			{
-				UTIL_Remove(this);	
-			}	
-			return true;
+				ITEM_GiveAmmo(pPlayer, sk_pickup_sniper.GetFloat(), "Sniper");
+			}
+			else
+			{
+				ITEM_GiveAmmo(pPlayer, m_flPickUpAmount, "Sniper");
+			}
+
+			if (m_PickupSnd != NULL_STRING)
+			{
+				CPASAttenuationFilter filter(this);
+				EmitSound_t ep;
+				ep.m_pSoundName = (char*)STRING(m_PickupSnd);
+				EmitSound(filter, pPlayer->entindex(), ep);
+			}
+			else
+			{
+				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
+				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+			}
+
+			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
+			if (gEvilImpulse101) { UTIL_Remove(this); }
+
+			m_OnCollected.FireOutput(pActivator, this);
 		}
-		return false;
+		else // If Ammo is full then player can pick this up like a normal prop.
+		{
+			pPlayer->PickupObject(this);
+			m_OnPickedUp.FireOutput(pActivator, this);
+			return;
+		}
 	}
+	DECLARE_DATADESC();
 };
+
 LINK_ENTITY_TO_CLASS(item_box_sniper_rounds, CItem_BoxSniperRounds);
 
+BEGIN_DATADESC(CItem_BoxSniperRounds)
+	DEFINE_KEYFIELD(m_flPickUpAmount, FIELD_FLOAT, "itemval"),
+	DEFINE_KEYFIELD(m_PickupSnd, FIELD_SOUNDNAME, "message"),
+
+	//Output
+	DEFINE_OUTPUT(m_OnCollected, "OnCollected"),
+	DEFINE_OUTPUT(m_OnPickedUp, "OnPickedUp"),
+END_DATADESC()
 
 // ========================================================================
 //	>> BoxBuckshot
@@ -632,24 +994,66 @@ public:
 		SetModel( "models/items/boxbuckshot.mdl");
 		BaseClass::Spawn( );
 	}
+
 	void Precache( void )
 	{
 		PrecacheModel ("models/items/boxbuckshot.mdl");
 	}
-	bool MyTouch( CBasePlayer *pPlayer )
+
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_BUCKSHOT, "Buckshot"))
+		CBasePlayer* pPlayer = static_cast<CBasePlayer*>(pActivator);
+
+		// Custom Ammo pickup Values for Hammer and Junk
+		if ((pPlayer->GetAmmoCount("Buckshot") < sk_max_buckshot.GetFloat())) // If Ammo is under the max carry capacity for this Ammo type then allow collecting.
 		{
-			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
+			if (m_flPickUpAmount == 0)
 			{
-				UTIL_Remove(this);	
+				ITEM_GiveAmmo(pPlayer, sk_pickup_buckshot.GetFloat(), "Buckshot");
 			}
-			return true;
+			else
+			{
+				ITEM_GiveAmmo(pPlayer, m_flPickUpAmount, "Buckshot");
+			}
+
+			if (m_PickupSnd != NULL_STRING)
+			{
+				CPASAttenuationFilter filter(this);
+				EmitSound_t ep;
+				ep.m_pSoundName = (char*)STRING(m_PickupSnd);
+				EmitSound(filter, pPlayer->entindex(), ep);
+			}
+			else
+			{
+				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
+				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+			}
+
+			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
+			if (gEvilImpulse101) { UTIL_Remove(this); }
+
+			m_OnCollected.FireOutput(pActivator, this);
 		}
-		return false;
+		else // If Ammo is full then player can pick this up like a normal prop.
+		{
+			pPlayer->PickupObject(this);
+			m_OnPickedUp.FireOutput(pActivator, this);
+			return;
+		}
 	}
+	DECLARE_DATADESC();
 };
+
 LINK_ENTITY_TO_CLASS(item_box_buckshot, CItem_BoxBuckshot);
+
+BEGIN_DATADESC(CItem_BoxBuckshot)
+	DEFINE_KEYFIELD(m_flPickUpAmount, FIELD_FLOAT, "itemval"),
+	DEFINE_KEYFIELD(m_PickupSnd, FIELD_SOUNDNAME, "message"),
+
+	//Output
+	DEFINE_OUTPUT(m_OnCollected, "OnCollected"),
+	DEFINE_OUTPUT(m_OnPickedUp, "OnPickedUp"),
+END_DATADESC()
 
 // ========================================================================
 //	>> CItem_AR2AltFireRound
@@ -672,21 +1076,60 @@ public:
 		BaseClass::Spawn( );
 	}
 
-	bool MyTouch( CBasePlayer *pPlayer )
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_AR2_ALTFIRE, "AR2AltFire" ) )
+		CBasePlayer* pPlayer = static_cast<CBasePlayer*>(pActivator);
+
+		// Custom Ammo pickup Values for Hammer and Junk
+		if ((pPlayer->GetAmmoCount("AR2_Grenade") < sk_max_ar2_gren.GetFloat())) // If Ammo is under the max carry capacity for this Ammo type then allow collecting.
 		{
-			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
+			if (m_flPickUpAmount == 0)
 			{
-				UTIL_Remove(this);	
+				ITEM_GiveAmmo(pPlayer, sk_pickup_ar2_gren.GetFloat(), "AR2_Grenade");
 			}
-			return true;
+			else
+			{
+				ITEM_GiveAmmo(pPlayer, m_flPickUpAmount, "AR2_Grenade");
+			}
+
+			if (m_PickupSnd != NULL_STRING)
+			{
+				CPASAttenuationFilter filter(this);
+				EmitSound_t ep;
+				ep.m_pSoundName = (char*)STRING(m_PickupSnd);
+				EmitSound(filter, pPlayer->entindex(), ep);
+			}
+			else
+			{
+				CPASAttenuationFilter filter(pPlayer, "ItemBattery.Touch");
+				EmitSound(filter, pPlayer->entindex(), "ItemBattery.Touch");
+			}
+
+			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
+			if (gEvilImpulse101) { UTIL_Remove(this); }
+
+			m_OnCollected.FireOutput(pActivator, this);
 		}
-		return false;
+		else // If Ammo is full then player can pick this up like a normal prop.
+		{
+			pPlayer->PickupObject(this);
+			m_OnPickedUp.FireOutput(pActivator, this);
+			return;
+		}
 	}
+	DECLARE_DATADESC();
 };
 
 LINK_ENTITY_TO_CLASS( item_ammo_ar2_altfire, CItem_AR2AltFireRound );
+
+BEGIN_DATADESC(CItem_AR2AltFireRound)
+	DEFINE_KEYFIELD(m_flPickUpAmount, FIELD_FLOAT, "itemval"),
+	DEFINE_KEYFIELD(m_PickupSnd, FIELD_SOUNDNAME, "message"),
+
+	//Output
+	DEFINE_OUTPUT(m_OnCollected, "OnCollected"),
+	DEFINE_OUTPUT(m_OnPickedUp, "OnPickedUp"),
+END_DATADESC()
 
 // ==================================================================
 // Ammo crate which will supply infinite ammo of the specified type

@@ -1008,11 +1008,11 @@ void CBasePlayer::DeathSound( const CTakeDamageInfo &info )
 int CBasePlayer::ApplyArmour(float flArmour)
 {
 	extern ConVar sk_battery;
+	extern ConVar sk_battery_max;
 
-	const float MAX_NORMAL_BATTERY = 100;
-	if ((ArmorValue() < MAX_NORMAL_BATTERY) && IsSuitEquipped())
+	if ((ArmorValue() < sk_battery_max.GetFloat()) && IsSuitEquipped())
 	{
-		IncrementArmorValue(sk_battery.GetFloat(), MAX_NORMAL_BATTERY);
+		IncrementArmorValue(sk_battery.GetFloat(), sk_battery_max.GetFloat());
 
 		CPASAttenuationFilter filter(this, "ItemBattery.Touch");
 		EmitSound(filter, entindex(), "ItemBattery.Touch");
@@ -1028,7 +1028,7 @@ int CBasePlayer::ApplyArmour(float flArmour)
 		// For some reason this wasn't working in release build -- round it.
 		int pct;
 		char szcharge[64];
-		pct = (int)((float)(ArmorValue() * 100.0) * (1.0 / MAX_NORMAL_BATTERY) + 0.5);
+		pct = (int)((float)(ArmorValue() * 100.0) * (1.0 / sk_battery_max.GetFloat()) + 0.5);
 		pct = (pct / 5);
 		if (pct > 0)
 			pct--;

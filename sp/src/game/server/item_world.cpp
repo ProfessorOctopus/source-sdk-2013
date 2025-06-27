@@ -102,14 +102,10 @@ BEGIN_DATADESC( CItem )
 	DEFINE_OUTPUT( m_OnCacheInteraction, "OnCacheInteraction" ),
 END_DATADESC()
 
-
-CItem::CItem()
-{
-	m_bActivateWhenAtRest = false;
-}
-
 void CItem::Spawn( void )
 {
+	m_bActivateWhenAtRest = false;
+
 	if ( g_pGameRules->IsAllowedToSpawn( this ) == false )
 	{
 		UTIL_Remove( this );
@@ -152,12 +148,9 @@ void CItem::Spawn( void )
 		}
 	}
 #endif //CLIENT_DLL
-
-#if defined( HL2MP ) || defined( TF_DLL )
-	SetThink( &CItem::FallThink );
-	SetNextThink( gpGlobals->curtime + 0.1f );
-#endif
 }
+
+extern int gEvilImpulse101;
 
 void CItem::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
@@ -167,10 +160,9 @@ void CItem::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType
 	{
 		pPlayer->PickupObject( this );
 	}
+	if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO) { UTIL_Remove(this); }
+	if (gEvilImpulse101) { UTIL_Remove(this); }
 }
-
-extern int gEvilImpulse101;
-
 
 //-----------------------------------------------------------------------------
 // Activate when at rest, but don't allow pickup until then
@@ -290,12 +282,10 @@ bool CItem::ItemCanBeTouchedByPlayer( CBasePlayer *pPlayer )
 	return UTIL_ItemCanBeTouchedByPlayer( this, pPlayer );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : pOther - 
-//-----------------------------------------------------------------------------
 void CItem::ItemTouch( CBaseEntity *pOther )
 {
+	m_OnCacheInteraction.FireOutput(pOther, this);
+
 	// Vehicles can touch items + pick them up
 	if ( pOther->GetServerVehicle() )
 	{
@@ -310,8 +300,6 @@ void CItem::ItemTouch( CBaseEntity *pOther )
 
 	CBasePlayer *pPlayer = (CBasePlayer *)pOther;
 
-	m_OnCacheInteraction.FireOutput(pOther, this);
-
 	// ok, a player is touching this item, but can he have it?
 	if ( !g_pGameRules->CanHaveItem( pPlayer, this ) )
 	{
@@ -319,23 +307,8 @@ void CItem::ItemTouch( CBaseEntity *pOther )
 		return;
 	}
 
-	if ( MyTouch( pPlayer ) )
-	{
-		// player grabbed the item. 
-		g_pGameRules->PlayerGotItem( pPlayer, this );
-		if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_YES )
-		{
-			Respawn(); 
-		}
-		else
-		{
-			UTIL_Remove( this );
-		}
-	}
-	else if (gEvilImpulse101)
-	{
-		UTIL_Remove( this );
-	}
+	// player grabbed the item. 
+	g_pGameRules->PlayerGotItem( pPlayer, this );
 }
 
 CBaseEntity* CItem::Respawn( void )
@@ -351,10 +324,6 @@ CBaseEntity* CItem::Respawn( void )
 
 	UTIL_SetOrigin( this, g_pGameRules->VecItemRespawnSpot( this ) );// blip to whereever you should respawn.
 	SetAbsAngles( g_pGameRules->VecItemRespawnAngles( this ) );// set the angles.
-
-#if !defined( TF_DLL )
-	UTIL_DropToFloor( this, MASK_SOLID );
-#endif
 
 	RemoveAllDecals(); //remove any decals
 

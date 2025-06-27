@@ -16,24 +16,6 @@
 #include "player_pickup.h"
 #include "vphysics/constraints.h"
 
-// Armor given by a battery
-#define MAX_NORMAL_BATTERY	100
-
-// Ammo counts given by ammo items
-#define SIZE_AMMO_PISTOL			20
-#define SIZE_AMMO_PISTOL_LARGE		100
-#define SIZE_AMMO_SMG1				45
-#define SIZE_AMMO_SMG1_LARGE		225
-#define SIZE_AMMO_AR2				20
-#define SIZE_AMMO_AR2_LARGE			100
-#define SIZE_AMMO_RPG_ROUND			1
-#define SIZE_AMMO_SMG1_GRENADE		1
-#define SIZE_AMMO_BUCKSHOT			20
-#define SIZE_AMMO_357				6
-#define SIZE_AMMO_357_LARGE			20
-#define SIZE_AMMO_CROSSBOW			6
-#define	SIZE_AMMO_AR2_ALTFIRE		1
-
 #define SF_ITEM_START_CONSTRAINED	0x00000001
 #ifdef MAPBASE
 // Copied from CBaseCombatWeapon's flags, including any additions we made to those.
@@ -49,14 +31,12 @@ class CItem : public CBaseAnimating, public CDefaultPlayerPickupVPhysics
 public:
 	DECLARE_CLASS( CItem, CBaseAnimating );
 
-	CItem();
-
 	virtual void Spawn( void );
 	virtual void Precache();
 	virtual CBaseEntity* Respawn( void );
 	virtual void ItemTouch( CBaseEntity *pOther );
+	virtual void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value);
 	virtual void Materialize( void );
-	virtual bool MyTouch( CBasePlayer *pPlayer ) { return false; };
 
 	// Become touchable when we are at rest
 	virtual void OnEntityEvent( EntityEvent_t event, void *pEventData );
@@ -69,7 +49,6 @@ public:
 	virtual void OnPhysGunDrop( CBasePlayer *pPhysGunUser, PhysGunDrop_t reason );
 
 	virtual int	ObjectCaps() { return BaseClass::ObjectCaps() | FCAP_IMPULSE_USE | FCAP_WCEDIT_POSITION; };
-	virtual void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	Vector	GetOriginalSpawnOrigin( void ) { return m_vOriginalSpawnOrigin;	}
 	QAngle	GetOriginalSpawnAngles( void ) { return m_vOriginalSpawnAngles;	}
 	void	SetOriginalSpawnOrigin( const Vector& origin ) { m_vOriginalSpawnOrigin = origin; }
@@ -83,6 +62,7 @@ public:
 	COutputEvent	m_OnPickedUp;
 	string_t m_PickupSnd;	// Path/filename of WAV file to play.
 	float	m_flPickUpAmount;
+	CNetworkVar(int, m_iPrimaryAmmoType);		// "primary" ammo index into the ammo info array 
 
 #if defined( HL2MP ) || defined( TF_DLL )
 	void	FallThink( void );

@@ -14,6 +14,18 @@
 #include "tier0/memdbgon.h"
 
 ConVar sk_dynamic_resupply_modifier( "sk_dynamic_resupply_modifier","1.0" );
+
+extern ConVar sk_pickup_pistol;
+extern ConVar sk_pickup_smg1;
+extern ConVar sk_pickup_smg1_gren;
+extern ConVar sk_pickup_ar2;
+extern ConVar sk_pickup_buckshot;
+extern ConVar sk_pickup_rpg;
+extern ConVar sk_pickup_frag;
+extern ConVar sk_pickup_357;
+extern ConVar sk_pickup_xbow;
+extern ConVar sk_pickup_ar2_gren;
+extern ConVar sk_battery_max;
 extern ConVar sk_battery;
 extern ConVar sk_healthkit;
 
@@ -35,7 +47,6 @@ struct SpawnInfo_t
 	int	  m_iPotentialItems;
 };
 
-
 // Health types
 static DynamicResupplyItems_t g_DynamicResupplyHealthItems[] =
 {
@@ -46,16 +57,16 @@ static DynamicResupplyItems_t g_DynamicResupplyHealthItems[] =
 // Ammo types
 static DynamicResupplyItems_t g_DynamicResupplyAmmoItems[] =
 {
-	{ "item_ammo_pistol",			"Pistol",		SIZE_AMMO_PISTOL,		0.5f },
-	{ "item_ammo_smg1",				"SMG1",			SIZE_AMMO_SMG1,			0.4f },
-	{ "item_ammo_smg1_grenade",		"SMG1_Grenade", SIZE_AMMO_SMG1_GRENADE, 0.0f },
-	{ "item_ammo_ar2",				"AR2",			SIZE_AMMO_AR2,			0.0f },
-	{ "item_box_buckshot",			"Buckshot",		SIZE_AMMO_BUCKSHOT,		0.0f },
-	{ "item_rpg_round",				"RPG_Round",	SIZE_AMMO_RPG_ROUND,	0.0f },
-	{ "weapon_frag",				"Grenade",		1,						0.1f },
-	{ "item_ammo_357",				"357",			SIZE_AMMO_357,			0.0f },
-	{ "item_ammo_crossbow",			"XBowBolt",		SIZE_AMMO_CROSSBOW,		0.0f },
-	{ "item_ammo_ar2_altfire",		"AR2AltFire",	SIZE_AMMO_AR2_ALTFIRE,	0.0f },
+	{ "item_ammo_pistol",			"Pistol",		sk_pickup_pistol.GetFloat(),	0.5f },
+	{ "item_ammo_smg1",				"SMG1",			sk_pickup_smg1.GetFloat(),	0.4f },
+	{ "item_ammo_smg1_grenade",		"SMG1_Grenade", sk_pickup_smg1_gren.GetFloat(),	0.0f },
+	{ "item_ammo_ar2",				"AR2",			sk_pickup_ar2.GetFloat(),	0.0f },
+	{ "item_box_buckshot",			"Buckshot",		sk_pickup_buckshot.GetFloat(),	0.0f },
+	{ "item_rpg_round",				"RPG_Round",	sk_pickup_rpg.GetFloat(),	0.0f },
+	{ "weapon_frag",				"Grenade",		sk_pickup_frag.GetFloat(),	0.1f },
+	{ "item_ammo_357",				"357",			sk_pickup_357.GetFloat(),	0.0f },
+	{ "item_ammo_crossbow",			"XBowBolt",		sk_pickup_xbow.GetFloat(),	0.0f },
+	{ "item_ammo_ar2_altfire",		"AR2AltFire",	sk_pickup_ar2_gren.GetFloat(),	0.0f },
 };
 
 #define DS_HEALTH_INDEX		0
@@ -129,7 +140,6 @@ typedef CHandle<CItem_DynamicResupply> DynamicResupplyHandle_t;
 
 static DynamicResupplyHandle_t	g_MasterResupply;
 
-
 //-----------------------------------------------------------------------------
 // Save/load: 
 //-----------------------------------------------------------------------------
@@ -160,13 +170,7 @@ BEGIN_DATADESC( CItem_DynamicResupply )
 #ifdef MAPBASE
 	DEFINE_OUTPUT( m_OnItem, "OnItem" ),
 #endif
-
-	// Silence, Classcheck!
-//	DEFINE_ARRAY( m_flDesiredHealth, FIELD_FLOAT,  NUM_HEALTH_ITEMS  ),
-//	DEFINE_ARRAY( m_flDesiredAmmo, FIELD_FLOAT,  NUM_AMMO_ITEMS  ),
-
 END_DATADESC()
-
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -475,7 +479,7 @@ void CItem_DynamicResupply::ComputeHealthRatios( CItem_DynamicResupply* pMaster,
 			}
 			else
 			{
-				flMax = MAX_NORMAL_BATTERY;
+				flMax = sk_battery_max.GetFloat();
 				float flCurrentArmor = pPlayer->ArmorValue() + (pSpawnInfo[i].m_iPotentialItems * sk_battery.GetFloat());
 				pSpawnInfo[i].m_flCurrentRatio = (flCurrentArmor / flMax);
 			}
