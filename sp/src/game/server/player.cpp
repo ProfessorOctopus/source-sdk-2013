@@ -98,6 +98,16 @@
 #include "mapbase/vscript_funcs_shared.h"
 #endif
 
+// Player Afixed light commands
+ConVar	sv_pal_enabled("sv_pal_enabled", "1");
+ConVar	sv_pal_redval("sv_pal_redval", "0");
+ConVar	sv_pal_greenval("sv_pal_greenval", "2");
+ConVar	sv_pal_blueval("sv_pal_blueval", "2");
+ConVar	sv_pal_exponent("sv_pal_exponent", "0");
+ConVar	sv_pal_radius("sv_pal_radius", "170");
+ConVar	sv_pal_time("sv_pal_time", "0.1");
+ConVar	sv_pal_decay("sv_pal_decay", "150");
+
 ConVar autoaim_max_dist( "autoaim_max_dist", "2160" ); // 2160 = 180 feet
 ConVar autoaim_max_deflect( "autoaim_max_deflect", "0.99" );
 
@@ -5287,6 +5297,7 @@ void CBasePlayer::Spawn( void )
 	}
 
 	SetNextThink(gpGlobals->curtime + 0.3f);
+
 	m_fInitHUD = true;
 	m_fWeapon = false;
 	m_iClientBattery = -1;
@@ -5379,11 +5390,13 @@ void CBasePlayer::Activate( void )
 
 void CBasePlayer::Think(void)
 {
-	//Player emits light
-	Vector pos = EyePosition(); //Set the light to the players eyes to stop weird issues when going up/down stairs and slops
-	CBroadcastRecipientFilter filter;
-	te->DynamicLight(filter, 0.0, &pos, 0, 2, 2, 0, 170, 0.1, 150); // Filer, Delay, Origin, Red, Green, Blue, Exponent, Radius, Time, Decay.
-
+	if (sv_pal_enabled.GetBool())
+	{
+		//Player emits light
+		Vector pos = EyePosition(); //Set the light to the players eyes to stop weird issues when going up/down stairs and slops
+		CBroadcastRecipientFilter filter;
+		te->DynamicLight(filter, 0.0, &pos, sv_pal_redval.GetFloat(), sv_pal_greenval.GetFloat(), sv_pal_blueval.GetFloat(), sv_pal_exponent.GetFloat(), sv_pal_radius.GetFloat(), sv_pal_time.GetFloat(), sv_pal_decay.GetFloat()); // Filer, Delay, Origin, Red, Green, Blue, Exponent, Radius, Time, Decay.
+	}
 	SetNextThink(gpGlobals->curtime);
 }
 
