@@ -81,6 +81,10 @@
 // NVNT haptic utils
 #include "haptics/haptic_utils.h"
 
+//FOR ELIGHT
+#include "dlight.h"
+#include "iefx.h"
+
 #ifdef HL2_DLL
 #include "combine_mine.h"
 #include "weapon_physcannon.h"
@@ -2383,66 +2387,9 @@ void CBasePlayer::PlayerDeathThink(void)
 	m_nButtons = 0;
 	m_iRespawnFrames = 0;
 
-	//Msg( "Respawn\n");
-
 	respawn( this, !IsObserver() );// don't copy a corpse if we're in deathcam.
 	SetNextThink( TICK_NEVER_THINK );
 }
-
-/*
-
-//=========================================================
-// StartDeathCam - find an intermission spot and send the
-// player off into observer mode
-//=========================================================
-void CBasePlayer::StartDeathCam( void )
-{
-	CBaseEntity *pSpot, *pNewSpot;
-	int iRand;
-
-	if ( GetViewOffset() == vec3_origin )
-	{
-		// don't accept subsequent attempts to StartDeathCam()
-		return;
-	}
-
-	pSpot = gEntList.FindEntityByClassname( NULL, "info_intermission");	
-
-	if ( pSpot )
-	{
-		// at least one intermission spot in the world.
-		iRand = random->RandomInt( 0, 3 );
-
-		while ( iRand > 0 )
-		{
-			pNewSpot = gEntList.FindEntityByClassname( pSpot, "info_intermission");
-			
-			if ( pNewSpot )
-			{
-				pSpot = pNewSpot;
-			}
-
-			iRand--;
-		}
-
-		CreateCorpse();
-		StartObserverMode( pSpot->GetAbsOrigin(), pSpot->GetAbsAngles() );
-	}
-	else
-	{
-		// no intermission spot. Push them up in the air, looking down at their corpse
-		trace_t tr;
-
-		CreateCorpse();
-
-		UTIL_TraceLine( GetAbsOrigin(), GetAbsOrigin() + Vector( 0, 0, 128 ), 
-			MASK_PLAYERSOLID_BRUSHONLY, this, COLLISION_GROUP_NONE, &tr );
-		QAngle angles;
-		VectorAngles( GetAbsOrigin() - tr.endpos, angles );
-		StartObserverMode( tr.endpos, angles );
-		return;
-	}
-} */
 
 void CBasePlayer::StopObserverMode()
 {
@@ -5339,7 +5286,7 @@ void CBasePlayer::Spawn( void )
 		Msg( "Couldn't alloc player sound slot!\n" );
 	}
 
-	SetThink(NULL);
+	SetNextThink(gpGlobals->curtime + 0.3f);
 	m_fInitHUD = true;
 	m_fWeapon = false;
 	m_iClientBattery = -1;
@@ -5430,6 +5377,16 @@ void CBasePlayer::Activate( void )
 	m_iVehicleAnalogBias = VEHICLE_ANALOG_BIAS_NONE;
 }
 
+void CBasePlayer::Think(void)
+{
+	//Player emits light
+	Vector pos = EyePosition(); //Set the light to the players eyes to stop weird issues when going up/down stairs and slops
+	CBroadcastRecipientFilter filter;
+	te->DynamicLight(filter, 0.0, &pos, 0, 2, 2, 0, 170, 0.1, 150); // Filer, Delay, Origin, Red, Green, Blue, Exponent, Radius, Time, Decay.
+
+	SetNextThink(gpGlobals->curtime);
+}
+
 void CBasePlayer::Precache( void )
 {
 	BaseClass::Precache();
@@ -5451,24 +5408,6 @@ void CBasePlayer::Precache( void )
 	PrecacheParticleSystem( "slime_splash_02" );
 	PrecacheParticleSystem( "slime_splash_03" );
 #endif
-
-	// in the event that the player JUST spawned, and the level node graph
-	// was loaded, fix all of the node graph pointers before the game starts.
-	
-	// !!!BUGBUG - now that we have multiplayer, this needs to be moved!
-	/* todo - put in better spot and use new ainetowrk stuff
-	if ( WorldGraph.m_fGraphPresent && !WorldGraph.m_fGraphPointersSet )
-	{
-		if ( !WorldGraph.FSetGraphPointers() )
-		{
-			Msg( "**Graph pointers were not set!\n");
-		}
-		else
-		{
-			Msg( "**Graph Pointers Set!\n" );
-		} 
-	}
-	*/
 
 	// SOUNDS / MODELS ARE PRECACHED in ClientPrecache() (game specific)
 	// because they need to precache before any clients have connected
@@ -9999,7 +9938,6 @@ void CBasePlayer::HandleAnimEvent( animevent_t *pEvent )
 			return;
 		}
 	}
-
 	BaseClass::HandleAnimEvent( pEvent );
 }
 

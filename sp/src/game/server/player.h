@@ -662,6 +662,8 @@ public:
 
 	virtual void			HandleAnimEvent( animevent_t *pEvent );
 
+	void	Think(void);
+
 	virtual bool			ShouldAnnounceAchievement( void ){ return true; }
 
 #if defined USES_ECON_ITEMS
