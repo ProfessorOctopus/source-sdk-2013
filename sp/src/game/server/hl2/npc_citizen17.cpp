@@ -799,6 +799,9 @@ void CNPC_Citizen::SelectModel()
 					}
 				}
 
+				// Models selected this way must be unique to avoid conflicts in save/restore
+				m_Type = CT_UNIQUE;
+
 				// Just set the model right here
 				SetModelName( AllocPooledString( returnValue.m_pszString ) );
 				return;
