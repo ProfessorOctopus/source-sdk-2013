@@ -16,10 +16,6 @@
 #include "saverestore_utlvector.h"
 #include "dt_utlvector_send.h"
 
-#ifdef MAPBASE_VSCRIPT
-#include "mapbase/vscript_funcs_shared.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -475,8 +471,7 @@ void CAnimationLayer::DispatchAnimEvents( CBaseAnimating *eventHandler, CBaseAni
 		}
 
 #ifdef MAPBASE_VSCRIPT
-		scriptanimevent_t wrapper( event );
-		if (eventHandler->m_ScriptScope.IsInitialized() && !eventHandler->ScriptHookHandleAnimEvent( wrapper ))
+		if (eventHandler->m_ScriptScope.IsInitialized() && eventHandler->ScriptHookHandleAnimEvent( &event ) == false)
 			continue;
 #endif
 

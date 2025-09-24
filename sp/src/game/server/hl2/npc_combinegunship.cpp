@@ -187,29 +187,15 @@ public:
 	{
 		return m_bDisabled;
 	}
-#ifdef MAPBASE
-	void	GunshipCrashedOnTarget( CBaseHelicopter *pGunship )
-	{
-		m_OnCrashed.FireOutput( pGunship, this );
-	}
-	void	GunshipAcquiredCrashTarget( CBaseHelicopter *pGunship )
-	{
-		m_OnBeginCrash.FireOutput( pGunship, this );
-	}
-#else
 	void	GunshipCrashedOnTarget( void )
 	{
 		m_OnCrashed.FireOutput( this, this );
 	}
-#endif
 
 private:
 	bool			m_bDisabled;
 
 	COutputEvent	m_OnCrashed;
-#ifdef MAPBASE
-	COutputEvent	m_OnBeginCrash;
-#endif
 };
 
 LINK_ENTITY_TO_CLASS( info_target_gunshipcrash, CTargetGunshipCrash );
@@ -223,9 +209,6 @@ BEGIN_DATADESC( CTargetGunshipCrash )
 
 	// Outputs
 	DEFINE_OUTPUT( m_OnCrashed,			"OnCrashed" ),
-#ifdef MAPBASE
-	DEFINE_OUTPUT( m_OnBeginCrash,			"OnBeginCrash" ),
-#endif
 END_DATADESC()
 
 
@@ -564,11 +547,11 @@ void CNPC_CombineGunship::Spawn( void )
 
 	if ( HasSpawnFlags( SF_GUNSHIP_USE_CHOPPER_MODEL ) )
 	{
-		SetModel( DefaultOrCustomModel( "models/combine_helicopter.mdl" ) );
+		SetModel( "models/combine_helicopter.mdl" );
 	}
 	else
 	{
-		SetModel( DefaultOrCustomModel( "models/gunship.mdl" ) );
+		SetModel( "models/gunship.mdl" );
 	}
 	
 	ExtractBbox( SelectHeaviestSequence( ACT_GUNSHIP_PATROL ), m_cullBoxMins, m_cullBoxMaxs ); 
@@ -690,12 +673,12 @@ void CNPC_CombineGunship::Precache( void )
 {
 	if ( HasSpawnFlags( SF_GUNSHIP_USE_CHOPPER_MODEL ) )
 	{
-		PrecacheModel( DefaultOrCustomModel( "models/combine_helicopter.mdl" ) );
+		PrecacheModel( "models/combine_helicopter.mdl" );
 		Chopper_PrecacheChunks( this );
 	}
 	else
 	{
-		PrecacheModel( DefaultOrCustomModel( "models/gunship.mdl" ) );
+		PrecacheModel("models/gunship.mdl");
 	}
 
 	PrecacheModel("sprites/lgtning.vmt");
@@ -725,7 +708,7 @@ void CNPC_CombineGunship::Precache( void )
 		g_iGunshipEffectIndex = PrecacheModel( "sprites/physbeam.vmt" );
 	}
 
-	PropBreakablePrecacheAll( MAKE_STRING( DefaultOrCustomModel( "models/gunship.mdl" ) ) );
+	PropBreakablePrecacheAll( MAKE_STRING("models/gunship.mdl") );
 
 	BaseClass::Precache();
 }
@@ -1581,11 +1564,7 @@ void CNPC_CombineGunship::PrescheduleThink( void )
 				{
 					BeginDestruct();
 					m_OnCrashed.FireOutput( this, this );
-#ifdef MAPBASE
-					m_hCrashTarget->GunshipCrashedOnTarget( this );
-#else
 					m_hCrashTarget->GunshipCrashedOnTarget();
-#endif
 					return;
 				}
 			}
@@ -1996,10 +1975,6 @@ bool CNPC_CombineGunship::FindNearestGunshipCrash( void )
   	m_hCrashTarget = pNearest;
 	m_flNextGunshipCrashFind = gpGlobals->curtime + 0.5;
 	m_flEndDestructTime = 0;
-
-#ifdef MAPBASE
-	m_hCrashTarget->GunshipAcquiredCrashTarget( this );
-#endif
 
 	if ( g_debug_gunship.GetInt() )
 	{

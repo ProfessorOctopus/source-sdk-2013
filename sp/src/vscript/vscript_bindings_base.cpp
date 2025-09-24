@@ -106,7 +106,7 @@ BEGIN_SCRIPTDESC_ROOT( CScriptKeyValues, "Wrapper class over KeyValues instance"
 	DEFINE_SCRIPTFUNC_NAMED( ScriptGetKeyValueBool, "GetKeyBool", "Given a KeyValues object and a key name, return associated bool value" );
 	DEFINE_SCRIPTFUNC_NAMED( ScriptGetKeyValueString, "GetKeyString", "Given a KeyValues object and a key name, return associated string value" );
 	DEFINE_SCRIPTFUNC_NAMED( ScriptIsKeyValueEmpty, "IsKeyEmpty", "Given a KeyValues object and a key name, return true if key name has no value" );
-	DEFINE_SCRIPTFUNC_NAMED( ScriptReleaseKeyValues, "ReleaseKeyValues", SCRIPT_HIDE );
+	DEFINE_SCRIPTFUNC_NAMED( ScriptReleaseKeyValues, "ReleaseKeyValues", "Given a root KeyValues object, release its contents" );
 
 	DEFINE_SCRIPTFUNC( TableToSubKeys, "Converts a script table to KeyValues." );
 	DEFINE_SCRIPTFUNC( SubKeysToTable, "Converts to script table." );
@@ -131,84 +131,79 @@ BEGIN_SCRIPTDESC_ROOT( CScriptKeyValues, "Wrapper class over KeyValues instance"
 	DEFINE_SCRIPTFUNC_NAMED( ScriptSetString, "SetString", "Given a KeyValues object, set its own associated string value" );
 END_SCRIPTDESC();
 
-HSCRIPT_RC CScriptKeyValues::ScriptFindKey( const char *pszName )
+HSCRIPT CScriptKeyValues::ScriptFindKey( const char *pszName )
 {
-	KeyValues *pKeyValues = GetKeyValues()->FindKey(pszName);
+	KeyValues *pKeyValues = m_pKeyValues->FindKey(pszName);
 	if ( pKeyValues == NULL )
 		return NULL;
 
-	CScriptKeyValues *pScriptKey = new CScriptKeyValues( pKeyValues, true );
-	HSCRIPT hScriptInstance = g_pScriptVM->RegisterInstance( pScriptKey, true );
+	CScriptKeyValues *pScriptKey = new CScriptKeyValues( pKeyValues );
 
-	pScriptKey->m_pBase = m_pSelf;
-	pScriptKey->m_pBase->AddRef();
-
+	// UNDONE: who calls ReleaseInstance on this??
+	HSCRIPT hScriptInstance = g_pScriptVM->RegisterInstance( pScriptKey );
 	return hScriptInstance;
 }
 
-HSCRIPT_RC CScriptKeyValues::ScriptGetFirstSubKey( void )
+HSCRIPT CScriptKeyValues::ScriptGetFirstSubKey( void )
 {
-	KeyValues *pKeyValues = GetKeyValues()->GetFirstSubKey();
+	KeyValues *pKeyValues = m_pKeyValues->GetFirstSubKey();
 	if ( pKeyValues == NULL )
 		return NULL;
 
-	CScriptKeyValues *pScriptKey = new CScriptKeyValues( pKeyValues, true );
-	HSCRIPT hScriptInstance = g_pScriptVM->RegisterInstance( pScriptKey, true );
+	CScriptKeyValues *pScriptKey = new CScriptKeyValues( pKeyValues );
 
-	pScriptKey->m_pBase = m_pSelf;
-	pScriptKey->m_pBase->AddRef();
-
+	// UNDONE: who calls ReleaseInstance on this??
+	HSCRIPT hScriptInstance = g_pScriptVM->RegisterInstance( pScriptKey );
 	return hScriptInstance;
 }
 
-HSCRIPT_RC CScriptKeyValues::ScriptGetNextKey( void )
+HSCRIPT CScriptKeyValues::ScriptGetNextKey( void )
 {
-	KeyValues *pKeyValues = GetKeyValues()->GetNextKey();
+	KeyValues *pKeyValues = m_pKeyValues->GetNextKey();
 	if ( pKeyValues == NULL )
 		return NULL;
 
-	CScriptKeyValues *pScriptKey = new CScriptKeyValues( pKeyValues, true );
-	HSCRIPT hScriptInstance = g_pScriptVM->RegisterInstance( pScriptKey, true );
+	CScriptKeyValues *pScriptKey = new CScriptKeyValues( pKeyValues );
 
-	// if I don't have a parent, then I own my siblings
-	pScriptKey->m_pBase = m_pBase ? m_pBase : m_pSelf;
-	pScriptKey->m_pBase->AddRef();
-
+	// UNDONE: who calls ReleaseInstance on this??
+	HSCRIPT hScriptInstance = g_pScriptVM->RegisterInstance( pScriptKey );
 	return hScriptInstance;
 }
 
 int CScriptKeyValues::ScriptGetKeyValueInt( const char *pszName )
 {
-	int i = GetKeyValues()->GetInt( pszName );
+	int i = m_pKeyValues->GetInt( pszName );
 	return i;
 }
 
 float CScriptKeyValues::ScriptGetKeyValueFloat( const char *pszName )
 {
-	float f = GetKeyValues()->GetFloat( pszName );
+	float f = m_pKeyValues->GetFloat( pszName );
 	return f;
 }
 
 const char *CScriptKeyValues::ScriptGetKeyValueString( const char *pszName )
 {
-	const char *psz = GetKeyValues()->GetString( pszName );
+	const char *psz = m_pKeyValues->GetString( pszName );
 	return psz;
 }
 
 bool CScriptKeyValues::ScriptIsKeyValueEmpty( const char *pszName )
 {
-	bool b = GetKeyValues()->IsEmpty( pszName );
+	bool b = m_pKeyValues->IsEmpty( pszName );
 	return b;
 }
 
 bool CScriptKeyValues::ScriptGetKeyValueBool( const char *pszName )
 {
-	bool b = GetKeyValues()->GetBool( pszName );
+	bool b = m_pKeyValues->GetBool( pszName );
 	return b;
 }
 
 void CScriptKeyValues::ScriptReleaseKeyValues( )
 {
+	m_pKeyValues->deleteThis();
+	m_pKeyValues = NULL;
 }
 
 void KeyValues_TableToSubKeys( HSCRIPT hTable, KeyValues *pKV )
@@ -264,134 +259,125 @@ void KeyValues_SubKeysToTable( KeyValues *pKV, HSCRIPT hTable )
 
 void CScriptKeyValues::TableToSubKeys( HSCRIPT hTable )
 {
-	KeyValues_TableToSubKeys( hTable, GetKeyValues() );
+	KeyValues_TableToSubKeys( hTable, m_pKeyValues );
 }
 
 void CScriptKeyValues::SubKeysToTable( HSCRIPT hTable )
 {
-	KeyValues_SubKeysToTable( GetKeyValues(), hTable );
+	KeyValues_SubKeysToTable( m_pKeyValues, hTable );
 }
 
-HSCRIPT_RC CScriptKeyValues::ScriptFindOrCreateKey( const char *pszName )
+HSCRIPT CScriptKeyValues::ScriptFindOrCreateKey( const char *pszName )
 {
-	KeyValues *pKeyValues = GetKeyValues()->FindKey(pszName, true);
+	KeyValues *pKeyValues = m_pKeyValues->FindKey(pszName, true);
 	if ( pKeyValues == NULL )
 		return NULL;
 
-	CScriptKeyValues *pScriptKey = new CScriptKeyValues( pKeyValues, true );
-	HSCRIPT hScriptInstance = g_pScriptVM->RegisterInstance( pScriptKey, true );
+	CScriptKeyValues *pScriptKey = new CScriptKeyValues( pKeyValues );
 
-	pScriptKey->m_pBase = m_pSelf;
-	pScriptKey->m_pBase->AddRef();
-
+	// UNDONE: who calls ReleaseInstance on this??
+	HSCRIPT hScriptInstance = g_pScriptVM->RegisterInstance( pScriptKey );
 	return hScriptInstance;
 }
 
 const char *CScriptKeyValues::ScriptGetName()
 {
-	const char *psz = GetKeyValues()->GetName();
+	const char *psz = m_pKeyValues->GetName();
 	return psz;
 }
 
 int CScriptKeyValues::ScriptGetInt()
 {
-	int i = GetKeyValues()->GetInt();
+	int i = m_pKeyValues->GetInt();
 	return i;
 }
 
 float CScriptKeyValues::ScriptGetFloat()
 {
-	float f = GetKeyValues()->GetFloat();
+	float f = m_pKeyValues->GetFloat();
 	return f;
 }
 
 const char *CScriptKeyValues::ScriptGetString()
 {
-	const char *psz = GetKeyValues()->GetString();
+	const char *psz = m_pKeyValues->GetString();
 	return psz;
 }
 
 bool CScriptKeyValues::ScriptGetBool()
 {
-	bool b = GetKeyValues()->GetBool();
+	bool b = m_pKeyValues->GetBool();
 	return b;
 }
 
 
 void CScriptKeyValues::ScriptSetKeyValueInt( const char *pszName, int iValue )
 {
-	GetKeyValues()->SetInt( pszName, iValue );
+	m_pKeyValues->SetInt( pszName, iValue );
 }
 
 void CScriptKeyValues::ScriptSetKeyValueFloat( const char *pszName, float flValue )
 {
-	GetKeyValues()->SetFloat( pszName, flValue );
+	m_pKeyValues->SetFloat( pszName, flValue );
 }
 
 void CScriptKeyValues::ScriptSetKeyValueString( const char *pszName, const char *pszValue )
 {
-	GetKeyValues()->SetString( pszName, pszValue );
+	m_pKeyValues->SetString( pszName, pszValue );
 }
 
 void CScriptKeyValues::ScriptSetKeyValueBool( const char *pszName, bool bValue )
 {
-	GetKeyValues()->SetBool( pszName, bValue );
+	m_pKeyValues->SetBool( pszName, bValue );
 }
 
 void CScriptKeyValues::ScriptSetName( const char *pszValue )
 {
-	GetKeyValues()->SetName( pszValue );
+	m_pKeyValues->SetName( pszValue );
 }
 
 void CScriptKeyValues::ScriptSetInt( int iValue )
 {
-	GetKeyValues()->SetInt( NULL, iValue );
+	m_pKeyValues->SetInt( NULL, iValue );
 }
 
 void CScriptKeyValues::ScriptSetFloat( float flValue )
 {
-	GetKeyValues()->SetFloat( NULL, flValue );
+	m_pKeyValues->SetFloat( NULL, flValue );
 }
 
 void CScriptKeyValues::ScriptSetString( const char *pszValue )
 {
-	GetKeyValues()->SetString( NULL, pszValue );
+	m_pKeyValues->SetString( NULL, pszValue );
 }
 
 void CScriptKeyValues::ScriptSetBool( bool bValue )
 {
-	GetKeyValues()->SetBool( NULL, bValue );
+	m_pKeyValues->SetBool( NULL, bValue );
 }
 
 
 // constructors
-CScriptKeyValues::CScriptKeyValues( KeyValues *pKeyValues = NULL, bool bBorrow = false ) :
-	m_pBase( NULL )
+CScriptKeyValues::CScriptKeyValues( KeyValues *pKeyValues = NULL )
 {
 	if (pKeyValues == NULL)
 	{
-		pKeyValues = new KeyValues("CScriptKeyValues");
-		// Borrowed new memory doesn't make sense, are you trying to leak?
-		Assert( !bBorrow );
+		m_pKeyValues = new KeyValues("CScriptKeyValues");
 	}
-
-	m_pSelf = new KeyValues_RC( pKeyValues, bBorrow );
+	else
+	{
+		m_pKeyValues = pKeyValues;
+	}
 }
 
 // destructor
 CScriptKeyValues::~CScriptKeyValues( )
 {
-	Assert( m_pSelf != m_pBase );
-
-	// Children are always borrowed
-	Assert( !m_pBase || m_pSelf->borrow );
-
-	m_pSelf->Release();
-
-	if ( m_pBase )
+	if (m_pKeyValues)
 	{
-		m_pBase->Release();
+		m_pKeyValues->deleteThis();
 	}
+	m_pKeyValues = NULL;
 }
 
 //=============================================================================
@@ -401,9 +387,10 @@ CScriptKeyValues::~CScriptKeyValues( )
 //=============================================================================
 CScriptColorInstanceHelper g_ColorScriptInstanceHelper;
 
-BEGIN_SCRIPTDESC_ROOT_WITH_HELPER( Color, "", &g_ColorScriptInstanceHelper )
+BEGIN_SCRIPTDESC_ROOT( Color, "" )
 
 	DEFINE_SCRIPT_CONSTRUCTOR()
+	DEFINE_SCRIPT_INSTANCE_HELPER( &g_ColorScriptInstanceHelper )
 
 	DEFINE_SCRIPTFUNC( SetColor, "Sets the color." )
 
@@ -453,11 +440,13 @@ bool CScriptColorInstanceHelper::Get( void *p, const char *pszKey, ScriptVariant
 bool CScriptColorInstanceHelper::Set( void *p, const char *pszKey, ScriptVariant_t &variant )
 {
 	Color *pClr = ((Color *)p);
-	int iVal;
-	if ( strlen(pszKey) == 1 && variant.AssignTo( &iVal ) )
+	if ( strlen(pszKey) == 1 )
 	{
+		int iVal;
+		variant.AssignTo( &iVal );
 		switch (pszKey[0])
 		{
+			// variant.AssignTo( &(*pClr)[0] );
 			case 'r':
 				(*pClr)[0] = iVal;
 				return true;

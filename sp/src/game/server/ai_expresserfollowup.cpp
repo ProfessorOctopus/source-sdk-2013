@@ -78,7 +78,6 @@ static void DispatchComeback( CAI_ExpresserWithFollowup *pExpress, CBaseEntity *
 	// See DispatchFollowupThroughQueue()
 	criteria.AppendCriteria( "From_idx", CNumStr( pSpeaker->entindex() ) );
 	criteria.AppendCriteria( "From_class", pSpeaker->GetClassname() );
-	pSpeaker->AppendContextToCriteria( criteria, "From_" );
 #endif
 	// if a SUBJECT criteria is missing, put it back in.
 	if ( criteria.FindCriterionIndex( "Subject" ) == -1 )

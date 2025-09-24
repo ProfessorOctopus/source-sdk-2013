@@ -46,14 +46,12 @@ public:
 class CSurfaceScriptHelper
 {
 public:
-	CSurfaceScriptHelper() : m_pSurface(NULL), m_hSurfaceData(NULL) {}
+	// This class is owned by CScriptGameTrace, and cannot be accessed without being initialised in CScriptGameTrace::RegisterSurface()
+	//CSurfaceScriptHelper() : m_pSurface(NULL), m_hSurfaceData(NULL) {}
 
 	~CSurfaceScriptHelper()
 	{
-		if ( m_hSurfaceData )
-		{
-			g_pScriptVM->RemoveInstance( m_hSurfaceData );
-		}
+		g_pScriptVM->RemoveInstance( m_hSurfaceData );
 	}
 
 	void Init( csurface_t *surf )
@@ -100,10 +98,16 @@ class CScriptGameTrace : public CGameTrace
 public:
 	CScriptGameTrace() : m_surfaceAccessor(NULL), m_planeAccessor(NULL)
 	{
+		m_hScriptInstance = g_pScriptVM->RegisterInstance( this );
 	}
 
 	~CScriptGameTrace()
 	{
+		if ( m_hScriptInstance )
+		{
+			g_pScriptVM->RemoveInstance( m_hScriptInstance );
+		}
+
 		if ( m_surfaceAccessor )
 		{
 			g_pScriptVM->RemoveInstance( m_surfaceAccessor );
@@ -113,6 +117,22 @@ public:
 		{
 			g_pScriptVM->RemoveInstance( m_planeAccessor );
 		}
+	}
+
+	void RegisterSurface()
+	{
+		m_surfaceHelper.Init( &surface );
+		m_surfaceAccessor = g_pScriptVM->RegisterInstance( &m_surfaceHelper );
+	}
+
+	void RegisterPlane()
+	{
+		m_planeAccessor = g_pScriptVM->RegisterInstance( &plane );
+	}
+
+	HSCRIPT GetScriptInstance() const
+	{
+		return m_hScriptInstance;
 	}
 
 public:
@@ -134,30 +154,15 @@ public:
 	bool AllSolid() const				{ return allsolid; }
 	bool StartSolid() const				{ return startsolid; }
 
-	HSCRIPT Surface()
-	{
-		if ( !m_surfaceAccessor )
-		{
-			m_surfaceHelper.Init( &surface );
-			m_surfaceAccessor = g_pScriptVM->RegisterInstance( &m_surfaceHelper );
-		}
+	HSCRIPT Surface() const				{ return m_surfaceAccessor; }
+	HSCRIPT Plane() const				{ return m_planeAccessor; }
 
-		return m_surfaceAccessor;
-	}
-
-	HSCRIPT Plane()
-	{
-		if ( !m_planeAccessor )
-			m_planeAccessor = g_pScriptVM->RegisterInstance( &plane );
-
-		return m_planeAccessor;
-	}
-
-	void Destroy()						{}
+	void Destroy()						{ delete this; }
 
 private:
 	HSCRIPT m_surfaceAccessor;
 	HSCRIPT m_planeAccessor;
+	HSCRIPT m_hScriptInstance;
 
 	CSurfaceScriptHelper m_surfaceHelper;
 
@@ -167,47 +172,30 @@ private:
 //-----------------------------------------------------------------------------
 // Exposes animevent_t to VScript
 //-----------------------------------------------------------------------------
-struct scriptanimevent_t
+struct scriptanimevent_t : public animevent_t
 {
-	friend class CAnimEventTInstanceHelper;
+	int GetEvent() { return event; }
+	void SetEvent( int nEvent ) { event = nEvent; }
 
-public:
-	scriptanimevent_t( animevent_t &event ) : event( event ), options( NULL ) { }
-	~scriptanimevent_t( ) { delete[] options; }
+	const char *GetOptions() { return options; }
+	void SetOptions( const char *pOptions ) { options = pOptions; }
 
-	int GetEvent() { return event.event; }
-	void SetEvent( int nEvent ) { event.event = nEvent; }
+	float GetCycle() { return cycle; }
+	void SetCycle( float flCycle ) { cycle = flCycle; }
 
-	const char *GetOptions() { return event.options; }
-	void SetOptions( const char *pOptions )
-	{
-		size_t len = strlen( pOptions );
-		delete[] options;
-		event.options = options = new char[len + 1];
-		memcpy( options, pOptions, len + 1 );
-	}
+	float GetEventTime() { return eventtime; }
+	void SetEventTime( float flEventTime ) { eventtime = flEventTime; }
 
-	float GetCycle() { return event.cycle; }
-	void SetCycle( float flCycle ) { event.cycle = flCycle; }
+	int GetType() { return type; }
+	void SetType( int nType ) { eventtime = type; }
 
-	float GetEventTime() { return event.eventtime; }
-	void SetEventTime( float flEventTime ) { event.eventtime = flEventTime; }
-
-	int GetType() { return event.type; }
-	void SetType( int nType ) { event.type = nType; }
-
-	HSCRIPT GetSource() { return ToHScript( event.pSource ); }
+	HSCRIPT GetSource() { return ToHScript( pSource ); }
 	void SetSource( HSCRIPT hSource )
 	{
 		CBaseEntity *pEnt = ToEnt( hSource );
 		if (pEnt)
-			event.pSource = pEnt->GetBaseAnimating();
+			pSource = pEnt->GetBaseAnimating();
 	}
-
-private:
-	animevent_t &event;
-	// storage for ScriptVariant_t string, which may be temporary
-	char *options;
 };
 
 class CAnimEventTInstanceHelper : public IScriptInstanceHelper

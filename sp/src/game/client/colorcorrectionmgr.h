@@ -76,8 +76,6 @@ private:
 	CUtlVector< SetWeightParams_t > m_colorCorrectionWeights;
 
 	void CommitColorCorrectionWeights();
-
-	void LevelShutdownPreEntity();
 #endif
 };
 

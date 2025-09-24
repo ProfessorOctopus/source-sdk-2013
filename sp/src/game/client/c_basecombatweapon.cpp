@@ -90,10 +90,11 @@ static inline bool ShouldDrawLocalPlayerViewModel( void )
 	C_BasePlayer *localplayer = C_BasePlayer::GetLocalPlayer();
 	if (localplayer)
 	{
-		if (localplayer->DrawingPlayerModelExternally() && localplayer->InFirstPersonView())
+		if (localplayer->m_bDrawPlayerModelExternally)
 		{
 			// If this isn't the main view, draw the weapon.
-			if (!localplayer->InPerspectiveView())
+			view_id_t viewID = CurrentViewID();
+			if (viewID != VIEW_MAIN && viewID != VIEW_INTRO_CAMERA)
 				return false;
 		}
 
@@ -223,16 +224,8 @@ ShadowType_t C_BaseCombatWeapon::ShadowCastType()
 	if (!IsBeingCarried())
 		return SHADOWS_RENDER_TO_TEXTURE;
 
-	if (IsCarriedByLocalPlayer())
-	{
-		if (!C_BasePlayer::ShouldDrawLocalPlayer())
-			return SHADOWS_NONE;
-
-#ifdef MAPBASE
-		if (C_BasePlayer::GetLocalPlayer() && C_BasePlayer::GetLocalPlayer()->ShadowCastType() == SHADOWS_NONE)
-			return SHADOWS_NONE;
-#endif
-	}
+	if (IsCarriedByLocalPlayer() && !C_BasePlayer::ShouldDrawLocalPlayer())
+		return SHADOWS_NONE;
 
 	return SHADOWS_RENDER_TO_TEXTURE;
 }
@@ -465,7 +458,7 @@ bool C_BaseCombatWeapon::ShouldDraw( void )
 
 #ifdef MAPBASE
 		// We're drawing this in non-main views, handle it in DrawModel()
-		if ( pLocalPlayer->DrawingPlayerModelExternally() )
+		if ( pLocalPlayer->m_bDrawPlayerModelExternally )
 			return true;
 #endif
 
@@ -518,10 +511,11 @@ int C_BaseCombatWeapon::DrawModel( int flags )
 	if ( localplayer )
 	{
 #ifdef MAPBASE
-		if (GetOwner() == localplayer && localplayer->DrawingPlayerModelExternally())
+		if (localplayer->m_bDrawPlayerModelExternally)
 		{
 			// If this isn't the main view, draw the weapon.
-			if ( (!localplayer->InPerspectiveView() || !localplayer->InFirstPersonView()) && (CurrentViewID() != VIEW_SHADOW_DEPTH_TEXTURE || !localplayer->IsEffectActive(EF_DIMLIGHT)))
+			view_id_t viewID = CurrentViewID();
+			if ( (!localplayer->InFirstPersonView() || (viewID != VIEW_MAIN && viewID != VIEW_INTRO_CAMERA)) && (viewID != VIEW_SHADOW_DEPTH_TEXTURE || !localplayer->IsEffectActive(EF_DIMLIGHT)) )
 			{
 				// TODO: Is this inefficient?
 				int nModelIndex = GetModelIndex();
@@ -540,10 +534,6 @@ int C_BaseCombatWeapon::DrawModel( int flags )
 
 				return iDraw;
 			}
-			else
-			{
-				return 0;
-			}
 		}
 #endif
 		if ( localplayer->IsObserver() && GetOwner() )
@@ -560,24 +550,6 @@ int C_BaseCombatWeapon::DrawModel( int flags )
 
 	return BaseClass::DrawModel( flags );
 }
-
-#ifdef MAPBASE
-//-----------------------------------------------------------------------------
-// Purpose:	
-//-----------------------------------------------------------------------------
-bool C_BaseCombatWeapon::DispatchMuzzleEffect( const char *options, bool isFirstPerson )
-{
-	// Don't show muzzle flashes in first-person
-	C_BasePlayer *pPlayer = ToBasePlayer( GetOwner() );
-	if (pPlayer)
-	{
-		if (pPlayer->DrawingPlayerModelExternally() && pPlayer->InFirstPersonView())
-			return false;
-	}
-
-	return BaseClass::DispatchMuzzleEffect( options, isFirstPerson );
-}
-#endif
 
 
 //-----------------------------------------------------------------------------

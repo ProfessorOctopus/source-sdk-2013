@@ -455,7 +455,7 @@ void CNPC_Dog::Spawn( void )
 
 	BaseClass::Spawn();
 
-	SetModel( DefaultOrCustomModel( "models/dog.mdl" ) );
+	SetModel( "models/dog.mdl" );
 
 	SetHullType( HULL_WIDE_HUMAN );
 	SetHullSizeNormal();
@@ -638,7 +638,7 @@ void CNPC_Dog::PullObject( bool bMantain )
 //-----------------------------------------------------------------------------
 void CNPC_Dog::Precache( void )
 {
-	PrecacheModel( DefaultOrCustomModel( "models/dog.mdl" ) );
+	PrecacheModel( "models/dog.mdl" );
 	
 	PrecacheScriptSound( "Weapon_PhysCannon.Launch" );
 

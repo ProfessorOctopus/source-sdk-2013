@@ -528,13 +528,9 @@ public:
 			if ( pVMT->LoadFromBuffer( pMaterialName, buf ) )
 			{
 				bFound = true;
-				KeyValues *pBaseTexture = pVMT->FindKey("%alphatexture");
-				if ( pBaseTexture || pVMT->FindKey("$alphatest") || pVMT->FindKey("$translucent") )
+				if ( pVMT->FindKey("$translucent") || pVMT->FindKey("$alphatest") )
 				{
-					if ( !pBaseTexture )
-					{
-						pBaseTexture = pVMT->FindKey("$basetexture");
-					}
+					KeyValues *pBaseTexture = pVMT->FindKey("$basetexture");
 					if ( pBaseTexture )
 					{
 						const char *pBaseTextureName = pBaseTexture->GetString();

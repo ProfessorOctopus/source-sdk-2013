@@ -140,8 +140,6 @@ public:
 	// For VScript functions
 	HSCRIPT	ScriptGetOwner() const { return ToHScript( m_hOwner ); }
 	HSCRIPT	ScriptGetTarget() const { return ToHScript( m_hTarget ); }
-
-	void	ScriptFreeSound() { m_flExpireTime = gpGlobals->curtime; m_bNoExpirationTime = false; }
 #endif
 
 	EHANDLE	m_hOwner;				// sound's owner

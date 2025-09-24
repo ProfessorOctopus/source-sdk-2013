@@ -28,10 +28,6 @@
 extern IScriptManager *scriptmanager;
 extern ScriptClassDesc_t * GetScriptDesc( CBaseEntity * );
 
-#ifdef MAPBASE_VSCRIPT
-ConVar script_connect_debugger_on_mapspawn_client( "script_connect_debugger_on_mapspawn_client", "0" );
-#endif
-
 // #define VMPROFILE 1
 
 #ifdef VMPROFILE
@@ -238,7 +234,8 @@ class CMaterialProxyScriptInstanceHelper : public IScriptInstanceHelper
 
 CMaterialProxyScriptInstanceHelper g_MaterialProxyScriptInstanceHelper;
 
-BEGIN_SCRIPTDESC_ROOT_NAMED_WITH_HELPER( CScriptMaterialProxy, "CScriptMaterialProxy", "Material proxy for VScript", &g_MaterialProxyScriptInstanceHelper )
+BEGIN_SCRIPTDESC_ROOT_NAMED( CScriptMaterialProxy, "CScriptMaterialProxy", "Material proxy for VScript" )
+	DEFINE_SCRIPT_INSTANCE_HELPER( &g_MaterialProxyScriptInstanceHelper )
 	DEFINE_SCRIPTFUNC( GetVarString, "Gets a material var's string value" )
 	DEFINE_SCRIPTFUNC( GetVarInt, "Gets a material var's int value" )
 	DEFINE_SCRIPTFUNC( GetVarFloat, "Gets a material var's float value" )
@@ -686,17 +683,6 @@ bool VScriptClientInit()
 				//g_pScriptVM->RegisterInstance( &g_ScriptEntityIterator, "Entities" );
 #endif
 
-#ifdef MAPBASE_VSCRIPT
-				if ( script_connect_debugger_on_mapspawn_client.GetInt() == 2 )
-				{
-					g_pScriptVM->ConnectDebugger( vscript_debugger_port, 10.0f );
-				}
-				else if ( script_connect_debugger_on_mapspawn_client.GetInt() != 0 )
-				{
-					g_pScriptVM->ConnectDebugger( vscript_debugger_port );
-				}
-#endif
-
 				if (scriptLanguage == SL_SQUIRREL)
 				{
 					g_pScriptVM->Run( g_Script_vscript_client );
@@ -785,19 +771,11 @@ public:
 		VScriptClientTerm();
 	}
 
-#ifdef MAPBASE_VSCRIPT
-	virtual void Update( float frametime )
-	{
-		if ( g_pScriptVM )
-			g_pScriptVM->Frame( frametime );
-	}
-#else
-	virtual void FrameUpdatePostEntityThink()
+	virtual void FrameUpdatePostEntityThink() 
 	{ 
 		if ( g_pScriptVM )
 			g_pScriptVM->Frame( gpGlobals->frametime );
 	}
-#endif
 
 	bool m_bAllowEntityCreationInScripts;
 };

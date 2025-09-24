@@ -250,7 +250,7 @@ void CZombie::Precache( void )
 {
 	BaseClass::Precache();
 
-	PrecacheModel( DefaultOrCustomModel( "models/zombie/classic.mdl" ) );
+	PrecacheModel( "models/zombie/classic.mdl" );
 	PrecacheModel( "models/zombie/classic_torso.mdl" );
 	PrecacheModel( "models/zombie/classic_legs.mdl" );
 
@@ -515,7 +515,7 @@ void CZombie::SetZombieModel( void )
 	}
 	else
 	{
-		SetModel( DefaultOrCustomModel( "models/zombie/classic.mdl" ) );
+		SetModel( "models/zombie/classic.mdl" );
 		SetHullType( HULL_HUMAN );
 	}
 

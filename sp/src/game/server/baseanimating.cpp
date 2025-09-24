@@ -317,7 +317,7 @@ BEGIN_ENT_SCRIPTDESC( CBaseAnimating, CBaseEntity, "Animating models" )
 	DEFINE_SCRIPTFUNC_NAMED( ScriptGetSequenceActivity, "GetSequenceActivity", "Gets the activity ID of the specified sequence index" )
 	DEFINE_SCRIPTFUNC_NAMED( ScriptSelectWeightedSequence, "SelectWeightedSequence", "Selects a sequence for the specified activity ID" )
 	DEFINE_SCRIPTFUNC_NAMED( ScriptSelectHeaviestSequence, "SelectHeaviestSequence", "Selects the sequence with the heaviest weight for the specified activity ID" )
-	DEFINE_SCRIPTFUNC_NAMED( ScriptGetSequenceKeyValues, "GetSequenceKeyValues", "Get a KeyValue class instance on the specified sequence" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetSequenceKeyValues, "GetSequenceKeyValues", "Get a KeyValue class instance on the specified sequence. WARNING: This uses the same KeyValue pointer as GetModelKeyValues!" )
 	DEFINE_SCRIPTFUNC( ResetSequenceInfo, "" )
 	DEFINE_SCRIPTFUNC( StudioFrameAdvance, "" )
 	DEFINE_SCRIPTFUNC( GetPlaybackRate, "" )
@@ -1261,8 +1261,7 @@ void CBaseAnimating::DispatchAnimEvents ( CBaseAnimating *eventHandler )
 		}
 
 #ifdef MAPBASE_VSCRIPT
-		scriptanimevent_t wrapper( event );
-		if (!eventHandler->ScriptHookHandleAnimEvent( wrapper ))
+		if (eventHandler->ScriptHookHandleAnimEvent( &event ) == false)
 			continue;
 #endif
 
@@ -1300,11 +1299,11 @@ void CBaseAnimating::DispatchAnimEvents ( CBaseAnimating *eventHandler )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CBaseAnimating::ScriptHookHandleAnimEvent( scriptanimevent_t &event )
+bool CBaseAnimating::ScriptHookHandleAnimEvent( animevent_t *pEvent )
 {
 	if (m_ScriptScope.IsInitialized() && g_Hook_HandleAnimEvent.CanRunInScope(m_ScriptScope))
 	{
-		HSCRIPT hEvent = g_pScriptVM->RegisterInstance( &event );
+		HSCRIPT hEvent = g_pScriptVM->RegisterInstance( reinterpret_cast<scriptanimevent_t*>(pEvent) );
 
 		// event
 		ScriptVariant_t args[] = { hEvent };
@@ -2306,14 +2305,21 @@ void CBaseAnimating::ScriptGetBoneTransform( int iBone, HSCRIPT hTransform )
 
 //-----------------------------------------------------------------------------
 // VScript access to sequence's key values
+// for iteration and value access, use:
+//	ScriptFindKey, ScriptGetFirstSubKey, ScriptGetString, 
+//	ScriptGetInt, ScriptGetFloat, ScriptGetNextKey
+// NOTE: This is recycled from ScriptGetModelKeyValues() and uses its pointer!!!
 //-----------------------------------------------------------------------------
-HSCRIPT_RC CBaseAnimating::ScriptGetSequenceKeyValues( int iSequence )
+HSCRIPT CBaseAnimating::ScriptGetSequenceKeyValues( int iSequence )
 {
 	KeyValues *pSeqKeyValues = GetSequenceKeyValues( iSequence );
 	HSCRIPT hScript = NULL;
 	if ( pSeqKeyValues )
 	{
-		hScript = scriptmanager->CreateScriptKeyValues( g_pScriptVM, pSeqKeyValues );
+		// UNDONE: how does destructor get called on this
+		m_pScriptModelKeyValues = hScript = scriptmanager->CreateScriptKeyValues( g_pScriptVM, pSeqKeyValues, true );
+
+		// UNDONE: who calls ReleaseInstance on this??? Does name need to be unique???
 	}
 
 	return hScript;

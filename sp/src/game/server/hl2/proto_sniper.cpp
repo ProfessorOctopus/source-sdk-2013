@@ -2645,19 +2645,16 @@ Vector CProtoSniper::DesiredBodyTarget( CBaseEntity *pTarget )
 {
 	// By default, aim for the center
 	Vector vecTarget = pTarget->WorldSpaceCenter();
-	const Vector vecBulletOrigin = GetBulletOrigin();
 
 #ifdef MAPBASE_VSCRIPT
-	if ( m_ScriptScope.IsInitialized() && g_Hook_GetActualShootPosition.CanRunInScope( m_ScriptScope ) )
+	if (m_ScriptScope.IsInitialized() && g_Hook_GetActualShootPosition.CanRunInScope(m_ScriptScope))
 	{
 		ScriptVariant_t functionReturn;
-		ScriptVariant_t args[] = { vecBulletOrigin, ToHScript( pTarget ) };
-		if ( g_Hook_GetActualShootPosition.Call( m_ScriptScope, &functionReturn, args ) )
+		ScriptVariant_t args[] = { GetBulletOrigin(), ToHScript( pTarget ) };
+		if (g_Hook_GetActualShootPosition.Call( m_ScriptScope, &functionReturn, args ))
 		{
-			if ( functionReturn.m_type == FIELD_VECTOR && functionReturn.m_pVector->LengthSqr() != 0.0f )
-			{
+			if (functionReturn.m_type == FIELD_VECTOR && functionReturn.m_pVector->LengthSqr() != 0.0f)
 				return *functionReturn.m_pVector;
-			}
 		}
 	}
 #endif
@@ -2685,12 +2682,12 @@ Vector CProtoSniper::DesiredBodyTarget( CBaseEntity *pTarget )
 		{
 			if( flTimeSinceLastMiss > 0.0f && flTimeSinceLastMiss < 4.0f && hl2_episodic.GetBool() )
 			{
-				vecTarget = pTarget->BodyTarget( vecBulletOrigin, false );
+				vecTarget = pTarget->BodyTarget( GetBulletOrigin(), false );
 			}
 			else
 			{
 				// Shoot zombies in the headcrab
-				vecTarget = pTarget->HeadTarget( vecBulletOrigin );
+				vecTarget = pTarget->HeadTarget( GetBulletOrigin() );
 			}
 		}
 		else if( pTarget->Classify() == CLASS_ANTLION )

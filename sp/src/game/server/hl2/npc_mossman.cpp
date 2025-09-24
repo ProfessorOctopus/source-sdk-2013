@@ -99,7 +99,7 @@ void CNPC_Mossman::Spawn()
 
 	BaseClass::Spawn();
 
-	SetModel( DefaultOrCustomModel( "models/mossman.mdl" ) );
+	SetModel( "models/mossman.mdl" );
 
 	SetHullType(HULL_HUMAN);
 	SetHullSizeNormal();
@@ -124,7 +124,7 @@ void CNPC_Mossman::Spawn()
 //-----------------------------------------------------------------------------
 void CNPC_Mossman::Precache()
 {
-	PrecacheModel( DefaultOrCustomModel( "models/mossman.mdl" ) );
+	PrecacheModel( "models/mossman.mdl" );
 	
 	BaseClass::Precache();
 }	

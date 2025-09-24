@@ -20,8 +20,6 @@ void HookMapbaseUserMessages( void )
 {
 	// VScript
 	//HOOK_MESSAGE( ScriptMsg ); // Hooked in CNetMsgScriptHelper
-
-	//HOOK_MESSAGE( ShowMenuComplex ); // Hooked in CHudMenu
 }
 #endif
 
@@ -29,8 +27,6 @@ void RegisterMapbaseUserMessages( void )
 {
 	// VScript
 	usermessages->Register( "ScriptMsg", -1 ); // CNetMsgScriptHelper
-
-	usermessages->Register( "ShowMenuComplex", -1 ); // CHudMenu
 
 #ifdef CLIENT_DLL
 	// TODO: Better placement?

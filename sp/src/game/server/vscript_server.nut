@@ -72,16 +72,16 @@ function ImpulseScale( flTargetMass, flDesiredSpeed )
 }
 __Documentation.RegisterHelp( "ImpulseScale", "float ImpulseScale(float, float)", "Returns an impulse scale required to push an object." );
 
-local PrecacheModel = DoPrecacheModel
+local PrecacheModel = PrecacheModel
 function PrecacheModel( a, b = true )
 {
     return PrecacheModel( a, b )
 }
 
-local PrecacheOther = DoPrecacheOther
+local PrecacheOther = PrecacheOther
 function PrecacheOther( a, b = "" )
 {
-    return PrecacheOther( a, b )
+    PrecacheOther( a, b )
 }
 
 function __ReplaceClosures( script, scope )
@@ -106,9 +106,10 @@ function __ReplaceClosures( script, scope )
 	}
 }
 
+local __OutputsPattern = regexp("^On.*Output$");
+
 function ConnectOutputs( table )
 {
-	local __OutputsPattern = regexp("^On.*Output$");
 	local nCharsToStrip = 6;
 	foreach( key, val in table )
 	{

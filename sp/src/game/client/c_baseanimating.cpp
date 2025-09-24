@@ -1531,32 +1531,35 @@ float C_BaseAnimating::ClampCycle( float flCycle, bool isLooping )
 //-----------------------------------------------------------------------------
 const Vector& C_BaseAnimating::ScriptGetAttachmentOrigin( int iAttachment )
 {	
+
 	static Vector absOrigin;
-	QAngle qa;
+	static QAngle qa;
 
 	C_BaseAnimating::GetAttachment( iAttachment, absOrigin, qa );
 
 	return absOrigin;
 }
 
-const QAngle& C_BaseAnimating::ScriptGetAttachmentAngles( int iAttachment )
+const Vector& C_BaseAnimating::ScriptGetAttachmentAngles( int iAttachment )
 {	
+
+	static Vector absOrigin;
+	static Vector absAngles;
 	static QAngle qa;
-	Vector absOrigin;
 
 	C_BaseAnimating::GetAttachment( iAttachment, absOrigin, qa );
-	return qa;
+	absAngles.x = qa.x;
+	absAngles.y = qa.y;
+	absAngles.z = qa.z;
+	return absAngles;
 }
 
-HSCRIPT_RC C_BaseAnimating::ScriptGetAttachmentMatrix( int iAttachment )
+HSCRIPT C_BaseAnimating::ScriptGetAttachmentMatrix( int iAttachment )
 {	
-	matrix3x4_t *matrix = new matrix3x4_t;
+	static matrix3x4_t matrix;
 
-	if ( C_BaseAnimating::GetAttachment( iAttachment, *matrix ) )
-		return g_pScriptVM->RegisterInstance( matrix, true );
-
-	delete matrix;
-	return NULL;
+	C_BaseAnimating::GetAttachment( iAttachment, matrix );
+	return g_pScriptVM->RegisterInstance( &matrix );
 }
 
 void C_BaseAnimating::ScriptGetBoneTransform( int iBone, HSCRIPT hTransform )
