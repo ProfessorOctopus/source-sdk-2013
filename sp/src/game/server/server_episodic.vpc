@@ -47,7 +47,10 @@ $Project "Server (Munted)"
 		$File	"vehicle_choreo_generic.cpp"
 		$File	"$SRCDIR\game\shared\vehicle_choreo_generic_shared.h"
 		$File	"$SRCDIR\game\shared\weapon_parse_default.cpp"
-
+		$Folder	"MUNTED DLL"
+		{
+			$File	"munted\monster_bms_guard.cpp"
+		}
 		$Folder	"HL2 DLL"
 		{
 			$File	"$SRCDIR\game\shared\episodic\achievements_ep1.cpp"

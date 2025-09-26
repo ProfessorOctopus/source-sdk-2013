@@ -26,7 +26,10 @@ $Project "Client (Munted)"
 		$File	"hud_chat.cpp"
 		$File	"c_team_objectiveresource.cpp"
 		$File	"c_team_objectiveresource.h"
-
+		$Folder	"MUNTED DLL"
+		{
+			$File	"munted\c_monster_bmsguard.cpp"
+		}
 		$Folder	"HL2 DLL"
 		{
 			$File	"$SRCDIR\game\shared\hl2\basehlcombatweapon_shared.cpp"
