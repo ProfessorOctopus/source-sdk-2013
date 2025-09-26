@@ -7,8 +7,6 @@
 $Macro OUTBINDIR	"$SRCDIR\..\game\$GAMENAME\bin"
 
 $Include "$SRCDIR\vpc_scripts\source_dll_base.vpc"
-
-// Mapbase shaders
 $Include "$SRCDIR\materialsystem\stdshaders\game_shader_dx9_mapbase.vpc" [$MAPBASE]
 
 $Configuration	"Debug"
@@ -35,7 +33,6 @@ $Configuration
 	$Compiler
 	{
 		$AdditionalIncludeDirectories	"$BASE;fxctmp9;vshtmp9;"	[$WIN32||$POSIX]
-//		$AdditionalIncludeDirectories	"$BASE;..\..\dx9sdk\include"	[$WIN32]
 		$AdditionalIncludeDirectories	"$BASE;fxctmp9_360;vshtmp9_360"					[$X360]
 		$PreprocessorDefinitions		"$BASE;STDSHADER_DX9_DLL_EXPORT;FAST_MATERIALVAR_ACCESS"
 		$PreprocessorDefinitions		"$BASE;USE_ACTUAL_DX" [($WIN32||$X360) && !$GL]
@@ -53,10 +50,8 @@ $Project
 	$Folder	"Source Files"
 	{
 		$File	"BaseVSShader.cpp"
-
 		$File	"example_model_dx9.cpp"
 		$File	"example_model_dx9_helper.cpp"
-
 		$File	"Bloom.cpp"
 		$File	"screenspace_general.cpp"
 	}
@@ -70,13 +65,11 @@ $Project
 		$File	"common_vertexlitgeneric_dx9.h"
 		$File	"common_vs_fxc.h"
 		$File	"shader_constant_register_map.h"
-
 		$File	"example_model_dx9_helper.h"
 	}
 
 	$Folder	"Link Libraries" [$WIN32]
 	{
-//		$File	"$SRCDIR\dx9sdk\lib\d3dx9.lib"		
 	}
 
 	$Folder "Link Libraries"
@@ -84,10 +77,8 @@ $Project
         $Lib	mathlib
         $Lib	shaderlib
     }
-
 	$File	"buildsdkshaders.bat"
 	$File	"buildshaders.bat"
-
 	$Shaders	"stdshader_dx9_20b.txt"
 	$Shaders	"stdshader_dx9_30.txt"
 }

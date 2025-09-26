@@ -5,8 +5,8 @@
 //-----------------------------------------------------------------------------
 
 $Macro SRCDIR		"..\.."
-$Macro GAMENAME 	"episodic" [!$SOURCESDK]
-$Macro GAMENAME 	"mod_episodic" [$SOURCESDK]
+$Macro GAMENAME 	"munted" [!$SOURCESDK]
+$Macro GAMENAME 	"mod_munted" [$SOURCESDK]
 
 $Include "$SRCDIR\game\server\server_base.vpc"
 
@@ -19,7 +19,7 @@ $Configuration
 	}
 }
 
-$Project "Server (Episodic)"
+$Project "Server (Munted)"
 {
 	$Folder	"Source Files"
 	{
@@ -138,7 +138,6 @@ $Project "Server (Episodic)"
 			$File	"hl2\info_darknessmode_lightsource.h"
 			$File	"hl2\info_teleporter_countdown.cpp"
 			$File	"hl2\item_ammo.cpp"
-			$File	"hl2\item_battery.cpp"
 			$File	"hl2\item_dynamic_resupply.cpp"
 			$File	"hl2\item_dynamic_resupply.h"
 			$File	"hl2\item_healthkit.cpp"
@@ -282,7 +281,6 @@ $Project "Server (Episodic)"
 			$File	"hl2\func_bulletshield.cpp"
 			$File	"hl2\func_bulletshield.h"
 			$File	"episodic\npc_puppet.cpp"
-
 
 			$Folder	"unused"
 			{
