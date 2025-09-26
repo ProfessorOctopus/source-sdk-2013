@@ -127,3 +127,14 @@ sp/game/mod_munted/bin/game_shader_dx9.dll
 sp/game/mod_munted/bin/game_shader_dx9.pdb
 sp/src/game/server/Debug_mod_munted/vc120.pdb
 sp/src/game/client/Debug_mod_munted/vc120.pdb
+*.dll
+*.pdb
+sp/src/vgui2/vgui_controls/Debug/vc120.pdb
+sp/src/responserules/runtime/Debug/vc120.pdb
+sp/src/materialsystem/stdshaders/Debug_dx9_mod_munted/vc120.pdb
+sp/src/materialsystem/stdshaders/Debug_dx9_mod_munted/game_shader_dx9.pdb
+sp/src/materialsystem/stdshaders/Debug_dx9_mod_munted/game_shader_dx9.dll
+sp/src/game/server/Debug_mod_munted/vc120.pdb
+sp/src/game/client/Debug_mod_munted/vc120.pdb
+sp/game/mod_munted/bin/game_shader_dx9.pdb
+sp/game/mod_munted/bin/game_shader_dx9.dll
