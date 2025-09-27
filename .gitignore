@@ -138,3 +138,6 @@ sp/src/game/server/Debug_mod_munted/vc120.pdb
 sp/src/game/client/Debug_mod_munted/vc120.pdb
 sp/game/mod_munted/bin/game_shader_dx9.pdb
 sp/game/mod_munted/bin/game_shader_dx9.dll
+sp/src/game/server/Debug_mod_munted/vc120.pdb
+sp/src/responserules/runtime/Debug/vc120.pdb
+sp/src/responserules/runtime/Debug/vc120.pdb
