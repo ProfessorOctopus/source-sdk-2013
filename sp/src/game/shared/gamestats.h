@@ -74,15 +74,13 @@ public:
 	  }
 
 	  void		Clear();
-
 	  void		SaveToBuffer( CUtlBuffer& buf );
 	  bool		ParseFromBuffer( CUtlBuffer& buf, int iBufferStatsVersion );
 
-	  // Data
+// Data
 public:
 	int			m_nCount;
 	int			m_nSeconds;
-
 	int			m_nCommentary;
 	int			m_nHDR;
 	int			m_nCaptions;

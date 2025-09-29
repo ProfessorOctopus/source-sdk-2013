@@ -27,7 +27,6 @@ $Configuration	"Debug"
 	{
 		$OutputDirectory			".\Debug_$GAMENAME"			[$WIN32]
 		$IntermediateDirectory		".\Debug_$GAMENAME"			[$WIN32]
-
 		$OutputDirectory			".\Debug_$GAMENAME_360"		[$X360]
 		$IntermediateDirectory		".\Debug_$GAMENAME_360"		[$X360]
 	}
@@ -39,7 +38,6 @@ $Configuration	"Release"
 	{
 		$OutputDirectory			".\Release_$GAMENAME"		[$WIN32]
 		$IntermediateDirectory		".\Release_$GAMENAME"		[$WIN32]
-
 		$OutputDirectory			".\Release_$GAMENAME_360"	[$X360]
 		$IntermediateDirectory		".\Release_$GAMENAME_360"	[$X360]
 	}
@@ -84,7 +82,6 @@ $Project
 		$File	"replay/replaycamera.h"
 		$File	"replay/cdll_replay.cpp"
 		$File	"replay/cdll_replay.h"
-		
 		$File	"replay/gamedefs.h"	[$BUILD_REPLAY]
 		$File	"replay/gamedefs.cpp"	[$BUILD_REPLAY]
 		$File	"replay/replay_ragdoll.cpp"	[$BUILD_REPLAY]
@@ -97,13 +94,10 @@ $Project
 		$File	"replay/replayrenderer.h"	[$BUILD_REPLAY]
 		$File	"replay/replayvideo.cpp"	[$BUILD_REPLAY]
 		$File	"replay/replayvideo.h"	[$BUILD_REPLAY]
-		
 		$File	"replay/genericclassbased_replay.cpp"	[$BUILD_REPLAY]
 		$File	"replay/genericclassbased_replay.h"	[$BUILD_REPLAY]
-		
 		$File	"$SRCDIR\game\shared\replay_gamestats_shared.cpp"	[$BUILD_REPLAY]
 		$File	"$SRCDIR\game\shared\replay_gamestats_shared.h"	[$BUILD_REPLAY]
-		
 		$File	"$SRCDIR\game\client\youtubeapi.h"	[$BUILD_REPLAY]
 		$File	"$SRCDIR\game\client\youtubeapi.cpp"	[$BUILD_REPLAY]
 		{
@@ -156,10 +150,8 @@ $Project
 			$File	"replay\replayyoutubeapi.h"
 			$File	"replay\replayyoutubeapi_key.cpp" [!$SOURCESDK]
 			$File	"replay\replayyoutubeapi_key_sdk.cpp" [$SOURCESDK]
-			
 			$File	"game_controls\slideshowpanel.cpp"
 			$File	"game_controls\slideshowpanel.h"
-			
 			$File	"$SRCDIR\common\movieobjects\timeutils.cpp"
 			{
 				$Configuration
@@ -182,14 +174,6 @@ $Project
 		$File	"hud_weapon.cpp"
 		$File	"train.cpp"
 		$File	"$SRCDIR\game\shared\weapon_parse_default.cpp"
-		$File	"$SRCDIR\game\shared\achievement_saverestore.cpp"
-		$File	"$SRCDIR\game\shared\achievement_saverestore.h"
-		$File	"$SRCDIR\game\shared\achievementmgr.cpp"
-		$File	"$SRCDIR\game\shared\achievementmgr.h"
-		$File   "$SRCDIR\game\shared\achievements_and_stats_interface.h"
-		$File	"$SRCDIR\game\shared\achievements_hlx.cpp"
-		$File	"achievement_notification_panel.cpp"
-		$File	"achievement_notification_panel.h"
 		$File	"$SRCDIR\game\shared\activitylist.cpp"
 		$File	"alphamaterialproxy.cpp"
 		$File	"$SRCDIR\game\shared\ammodef.cpp"
@@ -199,8 +183,6 @@ $Project
 		$File	"AnimateSpecificTextureProxy.cpp"
 		$File	"$SRCDIR\game\shared\animation.cpp"
 		$File	"$SRCDIR\game\shared\base_playeranimstate.cpp"
-		$File	"$SRCDIR\game\shared\baseachievement.cpp"
-		$File	"$SRCDIR\game\shared\baseachievement.h"
 		$File	"baseanimatedtextureproxy.cpp"
 		$File	"baseclientrendertargets.cpp"
 		$File	"$SRCDIR\game\shared\basecombatcharacter_shared.cpp"
@@ -509,7 +491,6 @@ $Project
 		$File	"$SRCDIR\game\shared\mp_shareddefs.cpp"
 		$File	"$SRCDIR\game\client\c_vote_controller.h"
 		$File	"$SRCDIR\game\client\c_vote_controller.cpp"
-		//Haptics
 		$File	"$SRCDIR\public\haptics\haptic_msgs.cpp"	[!$X360]
 		$File	"$SRCDIR\public\haptics\haptic_utils.cpp"	[$WIN32&&!$X360]
 
@@ -524,7 +505,6 @@ $Project
 		}
 		
 		// Files not using precompiled header cbase.h
-
 		$File	"$SRCDIR\public\bone_setup.cpp"						\
 				"$SRCDIR\public\posedebugger.cpp"					\
 				"$SRCDIR\public\client_class.cpp"					\
@@ -943,7 +923,6 @@ $Project
 		$File	"$SRCDIR\public\gametrace.h"
 		$File	"$SRCDIR\public\globalvars_base.h"
 		$File	"$SRCDIR\public\vgui_controls\HTML.h"
-		$File	"$SRCDIR\public\iachievementmgr.h"
 		$File	"$SRCDIR\public\appframework\IAppSystem.h"
 		$File	"$SRCDIR\public\icliententity.h"
 		$File	"$SRCDIR\public\icliententitylist.h"
@@ -1107,7 +1086,6 @@ $Project
 		$File	"$SRCDIR\public\worldsize.h"
 		$File	"$SRCDIR\public\zip_uncompressed.h"
 		$File	"$SRCDIR\public\tier1\interval.h"
-		//Haptics
 		$File   "$SRCDIR\public\haptics\ihaptics.h"	[$WIN32]
 		$File   "$SRCDIR\public\haptics\haptic_utils.h"	[$WIN32]
 	}
@@ -1275,5 +1253,4 @@ $Project
 		$Libexternal "$LIBCOMMON/libcurlssl" [$LINUXALL]
 		$Libexternal "$LIBCOMMON/libssl" [$LINUXALL]
  	}
-
 }

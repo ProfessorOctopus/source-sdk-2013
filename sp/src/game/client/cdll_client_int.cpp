@@ -154,27 +154,15 @@
 extern vgui::IInputInternal *g_InputInternal;
 
 //=============================================================================
-// HPE_BEGIN
-// [dwenger] Necessary for stats display
-//=============================================================================
-
-#include "achievements_and_stats_interface.h"
-
-//=============================================================================
 // HPE_END
 //=============================================================================
-
-
 #ifdef PORTAL
 #include "PortalRender.h"
 #endif
-
 #ifdef SIXENSE
 #include "sixense/in_sixense.h"
 #endif
-
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+#include "tier0/memdbgon.h" // memdbgon must be the last include file in a .cpp file!!!
 
 extern IClientMode *GetClientModeNormal();
 
@@ -221,22 +209,8 @@ IReplaySystem *g_pReplay = NULL;
 #ifdef MAPBASE
 IVEngineServer	*serverengine = NULL;
 #endif
-
 IScriptManager *scriptmanager = NULL;
-
 IHaptics* haptics = NULL;// NVNT haptics system interface singleton
-
-//=============================================================================
-// HPE_BEGIN
-// [dwenger] Necessary for stats display
-//=============================================================================
-
-AchievementsAndStatsInterface* g_pAchievementsAndStatsInterface = NULL;
-
-//=============================================================================
-// HPE_END
-//=============================================================================
-
 IGameSystem *SoundEmitterSystem();
 IGameSystem *ToolFrameworkClientSystem();
 
@@ -400,49 +374,6 @@ public:
 			gameeventmanager->FireEventClientSide( event );
 		}
 	}
-
-    //=============================================================================
-    // HPE_BEGIN
-    // [dwenger] Necessary for stats display
-    //=============================================================================
-
-    void CreateAchievementsPanel( vgui::Panel* pParent )
-    {
-        if (g_pAchievementsAndStatsInterface)
-        {
-            g_pAchievementsAndStatsInterface->CreatePanel( pParent );
-        }
-    }
-
-    void DisplayAchievementPanel()
-    {
-        if (g_pAchievementsAndStatsInterface)
-        {
-            g_pAchievementsAndStatsInterface->DisplayPanel();
-        }
-    }
-
-    void ShutdownAchievementPanel()
-    {
-        if (g_pAchievementsAndStatsInterface)
-        {
-            g_pAchievementsAndStatsInterface->ReleasePanel();
-        }
-    }
-
-	int GetAchievementsPanelMinWidth( void ) const
-	{
-        if ( g_pAchievementsAndStatsInterface )
-        {
-            return g_pAchievementsAndStatsInterface->GetAchievementsPanelMinWidth();
-        }
-
-		return 0;
-	}
-
-    //=============================================================================
-    // HPE_END
-    //=============================================================================
 
 	const char *GetHolidayString()
 	{
@@ -1208,11 +1139,6 @@ void CHLClient::PostInit()
 //-----------------------------------------------------------------------------
 void CHLClient::Shutdown( void )
 {
-    if (g_pAchievementsAndStatsInterface)
-    {
-        g_pAchievementsAndStatsInterface->ReleasePanel();
-    }
-
 #ifdef SIXENSE
 	g_pSixenseInput->Shutdown();
 	delete g_pSixenseInput;

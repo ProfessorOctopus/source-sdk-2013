@@ -27,7 +27,6 @@ $Configuration	"Debug"
 	{
 		$OutputDirectory		".\Debug_$GAMENAME"			[$WIN32]
 		$IntermediateDirectory	".\Debug_$GAMENAME"			[$WIN32]
-
 		$OutputDirectory		".\Debug_$GAMENAME_360"		[$X360]
 		$IntermediateDirectory	".\Debug_$GAMENAME_360"		[$X360]
 	}
@@ -39,7 +38,6 @@ $Configuration	"Release"
 	{
 		$OutputDirectory		".\Release_$GAMENAME"		[$WIN32]
 		$IntermediateDirectory	".\Release_$GAMENAME"		[$WIN32]
-
 		$OutputDirectory		".\Release_$GAMENAME_360"	[$X360]
 		$IntermediateDirectory	".\Release_$GAMENAME_360"	[$X360]
 	}
@@ -75,18 +73,12 @@ $Project
 	{
 		$File	"gamedll_replay.cpp"
 		$File	"$SRCDIR\common\replay\ireplaysessionrecorder.h"
-		
 		$File	"$SRCDIR\game\shared\replay_gamestats_shared.cpp"	[$BUILD_REPLAY]
 		$File	"$SRCDIR\game\shared\replay_gamestats_shared.h"	[$BUILD_REPLAY]
 	}
 	
 	$Folder	"Source Files"
 	{
-		$File	"$SRCDIR\game\shared\achievement_saverestore.cpp"
-		$File	"$SRCDIR\game\shared\achievement_saverestore.h"
-		$File	"$SRCDIR\game\shared\achievementmgr.cpp"
-		$File	"$SRCDIR\game\shared\achievementmgr.h"
-		$File	"$SRCDIR\game\shared\achievements_hlx.cpp"
 		$File	"$SRCDIR\game\shared\activitylist.cpp"
 		$File	"$SRCDIR\game\shared\activitylist.h"
 		$File	"ai_activity.cpp"
@@ -227,8 +219,6 @@ $Project
 		$File	"$SRCDIR\game\shared\apparent_velocity_helper.h"
 		$File	"$SRCDIR\game\shared\base_playeranimstate.cpp"
 		$File	"base_transmit_proxy.cpp"
-		$File	"$SRCDIR\game\shared\baseachievement.cpp"
-		$File	"$SRCDIR\game\shared\baseachievement.h"
 		$File	"baseanimating.cpp"
 		$File	"baseanimating.h"
 		$File	"BaseAnimatingOverlay.cpp"
@@ -674,12 +664,10 @@ $Project
 		$File	"$SRCDIR\game\shared\SharedFunctorUtils.h"
 		$File	"$SRCDIR\game\server\vote_controller.h"
 		$File	"$SRCDIR\game\server\vote_controller.cpp"
-		//Haptics
 		$File	"$SRCDIR\public\haptics\haptic_msgs.cpp"
 		$File	"$SRCDIR\public\haptics\haptic_utils.cpp"	[$WIN32]
 
 		// Not using precompiled header cbase.h
-
 		$File	"$SRCDIR\public\bone_setup.cpp"					\
 				"$SRCDIR\public\collisionutils.cpp"					\
 				"$SRCDIR\public\dt_send.cpp"						\
@@ -859,7 +847,6 @@ $Project
 		$File	"$SRCDIR\public\globalvars_base.h"
 		$File	"$SRCDIR\game\shared\groundlink.h"
 		$File	"$SRCDIR\game\shared\hl2\hl2_vehicle_radar.h"
-		$File	"$SRCDIR\public\iachievementmgr.h"
 		$File	"$SRCDIR\public\appframework\IAppSystem.h"
 		$File	"$SRCDIR\public\icliententity.h"
 		$File	"$SRCDIR\public\iclientnetworkable.h"
@@ -1007,7 +994,6 @@ $Project
 		$File	"$SRCDIR\public\tier1\interval.h"
 		$File	"$SRCDIR\game\shared\mp_shareddefs.h"
 		$File	"$SRCDIR\game\shared\econ\ihasowner.h"
-		//Haptics
 		$File	"$SRCDIR\public\haptics\haptic_utils.h"	[$WIN32]
 	}
 

@@ -402,9 +402,6 @@ public:
 
 	virtual void CreateCustomNetworkStringTables( void ) { }
 
-	// Game Achievements (server version)
-	virtual void MarkAchievement ( IRecipientFilter& filter, char const *pchAchievementName );
-
 	virtual void ResetMapCycleTimeStamp( void ){ return; }
 
 	virtual void OnNavMeshLoad( void ) { return; }

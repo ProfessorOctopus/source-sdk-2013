@@ -4,29 +4,24 @@
 //
 //=============================================================================
 #include "cbase.h"
-
 #include "igamesystem.h"
 #include "gamestats.h"
 #include "tier1/utlstring.h"
 #include "filesystem.h"
 #include "tier1/utlbuffer.h"
 #include "fmtstr.h"
-
 #ifndef SWDS
 #include "iregistry.h"
 #endif
-
 #include "tier1/utldict.h"
 #include "tier0/icommandline.h"
 #include <time.h>
 #ifdef GAME_DLL
 #include "vehicle_base.h"
 #endif 
-
 #if defined( _X360 )
 #include "xbox/xbox_win32stubs.h"
 #endif
-
 #ifdef CLIENT_DLL
 #include "materialsystem/materialsystem_config.h"
 #include "vgui_int.h"
@@ -37,33 +32,18 @@ extern const ConVar *sv_cheats;
 #include "steam/steam_api.h"
 #endif
 #endif
-
-
 #if !defined(NO_STEAM) && defined(CLIENT_DLL)
 #if defined(TF_CLIENT_DLL) ||  defined(CSTRIKE_DLL)
 #define STEAMWORKS_GAMESTATS_ACTIVE
 #include "steamworks_gamestats.h"
 #endif
 #endif
-
-// NOTE: This has to be the last file included!
-#include "tier0/memdbgon.h"
-
+#include "tier0/memdbgon.h" // NOTE: This has to be the last file included!
 
 #define GAMESTATS_LOG_FILE "gamestats.log"
 #define GAMESTATS_PATHID "MOD"
 
-/*
-#define ONE_DAY_IN_SECONDS 86400
-
-// Lower threshold in debug for testing...
-#if defined( _DEBUG )
-#define WALKED_AWAY_FROM_KEYBOARD_SECONDS 15.0f   // 15 seconds of movement == might be paused
-#else
-#define WALKED_AWAY_FROM_KEYBOARD_SECONDS 300.0f   // 5 minutes of no movement == might be paused
-#endif
-*/
-
+static CBaseGameStats s_CEP1GS_ThisJustSitsInMemory;
 extern IUploadGameStats *gamestatsuploader;
 
 static char s_szPseudoUniqueID[20] = "";
@@ -385,9 +365,7 @@ void CBaseGameStats::Event_Punted( CBaseEntity *pObject )
 	StatsLog( "CBaseGameStats::Event_Punted [%s]\n", pObject->GetClassname() );
 }
 
-void CBaseGameStats::Event_PlayerTraveled( CBasePlayer *pBasePlayer, float distanceInInches, bool bInVehicle, bool bSprinting )
-{
-}
+void CBaseGameStats::Event_PlayerTraveled( CBasePlayer *pBasePlayer, float distanceInInches, bool bInVehicle, bool bSprinting ){}
 
 void CBaseGameStats::Event_FlippedVehicle( CBasePlayer *pDriver, CPropVehicleDriveable *pVehicle )
 {
@@ -436,8 +414,6 @@ bool CBaseGameStats::SaveToFileNOW( bool bForceSyncWrite /* = false */ )
 		Q_FixSlashes( fullpath );
 	}
 
-	// StatsLog( "SaveToFileNOW '%s'\n", fullpath );
-
 	if( CBGSDriver.m_bShuttingDown || bForceSyncWrite ) //write synchronously
 	{
 		filesystem->WriteFile( fullpath, GAMESTATS_PATHID, buf );
@@ -455,7 +431,6 @@ bool CBaseGameStats::SaveToFileNOW( bool bForceSyncWrite /* = false */ )
 		// Write data async
 		filesystem->AsyncWrite( fullpath, statsBuffer.Base(), statsBuffer.TellPut(), true, false );
 	}
-
 	return true;
 }
 
@@ -469,10 +444,7 @@ void CBaseGameStats::Event_PlayerDisconnected( CBasePlayer *pBasePlayer )
 	StatsLog( "CBaseGameStats::Event_PlayerDisconnected\n" );
 }
 
-void CBaseGameStats::Event_PlayerDamage( CBasePlayer *pBasePlayer, const CTakeDamageInfo &info )
-{
-	//StatsLog( "CBaseGameStats::Event_PlayerDamage [%s] took %.2f damage\n", pBasePlayer->GetPlayerName(), info.GetDamage() );
-}
+void CBaseGameStats::Event_PlayerDamage( CBasePlayer *pBasePlayer, const CTakeDamageInfo &info ){}
 
 void CBaseGameStats::Event_PlayerKilledOther( CBasePlayer *pAttacker, CBaseEntity *pVictim, const CTakeDamageInfo &info )
 {
@@ -560,16 +532,13 @@ bool CBaseGameStats::UploadStatsFileNOW( void )
 												   uBlobSize,
 												   pvBlobData );
 	}
-
 	return false;
 }
-
 
 void CBaseGameStats::LoadingEvent_PlayerIDDifferentThanLoadedStats( void )
 {
 	StatsLog( "CBaseGameStats::LoadingEvent_PlayerIDDifferentThanLoadedStats\n" );
 }
-
 
 bool CBaseGameStats::LoadFromFile( void )
 {
@@ -643,14 +612,12 @@ bool CBaseGameStats::LoadFromFile( void )
 				}
 			}
 		}
-
 		return bRetVal;
 	}
 	else
 	{
 		filesystem->RemoveFile( GAMESTATS_LOG_FILE, GAMESTATS_PATHID );
 	}
-
 	return false;	
 }
 
@@ -663,8 +630,6 @@ void CBaseGameStats::SendData()
 {
 	CBGSDriver.SendData();
 }
-
-
 #endif // GAME_DLL
 
 bool CBaseGameStats_Driver::Init()
@@ -732,10 +697,8 @@ bool CBaseGameStats_Driver::Init()
 	{
 		m_bEnabled = false; //unable to generate a pseudo-unique ID, disable tracking
 	}
-
 	return true;
 }
-
 
 void CBaseGameStats_Driver::Shutdown()
 {
@@ -842,8 +805,6 @@ void CBaseGameStats_Driver::PossibleMapChange( void )
 	}
 #endif
 }
-
-
 
 void CBaseGameStats_Driver::LevelInitPreEntity()
 {

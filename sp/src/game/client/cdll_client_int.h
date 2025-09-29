@@ -1,10 +1,4 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose: 
-//
-// $NoKeywords: $
-//===========================================================================//
-
 #ifndef CDLL_CLIENT_INT_H
 #define CDLL_CLIENT_INT_H
 #ifdef _WIN32
@@ -15,7 +9,6 @@
 #include "utllinkedlist.h"
 #include "cdll_int.h"
 #include "eiface.h"
-
 
 class IVModelRender;
 class IVEngineClient;
@@ -60,17 +53,6 @@ class IEngineClientReplay;
 class IReplayScreenshotManager;
 class CSteamID;
 
-//=============================================================================
-// HPE_BEGIN
-// [dwenger] Necessary for stats display
-//=============================================================================
-
-class AchievementsAndStatsInterface;
-
-//=============================================================================
-// HPE_END
-//=============================================================================
-
 extern IVModelRender *modelrender;
 extern IVEngineClient	*engine;
 extern IVModelRender *modelrender;
@@ -113,17 +95,6 @@ extern IEngineClientReplay *g_pEngineClientReplay;
 #ifdef MAPBASE
 extern IVEngineServer *serverengine;
 #endif
-
-//=============================================================================
-// HPE_BEGIN
-// [dwenger] Necessary for stats display
-//=============================================================================
-
-extern AchievementsAndStatsInterface* g_pAchievementsAndStatsInterface;
-
-//=============================================================================
-// HPE_END
-//=============================================================================
 
 // Set to true between LevelInit and LevelShutdown.
 extern bool	g_bLevelInitialized;
@@ -187,9 +158,7 @@ enum
 	RPCSTATE_INIT,
 	RPCSTATE_LEVEL_INIT,
 	RPCSTATE_LEVEL_SHUTDOWN,
-
 	RPCSTATE_UPDATE,
 };
 #endif
-
 #endif // CDLL_CLIENT_INT_H

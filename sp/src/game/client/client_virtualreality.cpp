@@ -23,12 +23,9 @@
 #include <time.h>
 #include "steam/steam_api.h"
 
-const char *COM_GetModDirectory(); // return the mod dir (rather than the complete -game param, which can be a path)
-
 CClientVirtualReality g_ClientVirtualReality;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CClientVirtualReality, IClientVirtualReality, 
 	CLIENTVIRTUALREALITY_INTERFACE_VERSION, g_ClientVirtualReality );
-
 
 // --------------------------------------------------------------------
 // A huge pile of VR convars
@@ -1416,7 +1413,7 @@ void CClientVirtualReality::Activate()
 
 	// game specific VR config
 	CUtlString sCmd;
-	sCmd.Format( "exec sourcevr_%s.cfg\n", COM_GetModDirectory() );
+	sCmd.Format( "exec sourcevr_%s.cfg\n");
 	engine->ExecuteClientCmd( sCmd.Get() );
 
     vgui::surface()->SetSoftwareCursor( true );

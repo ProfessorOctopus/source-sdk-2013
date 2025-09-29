@@ -24,8 +24,6 @@
 #include "steam/steam_api.h"
 #endif
 
-const char *COM_GetModDirectory(); // return the mod dir (rather than the complete -game param, which can be a path)
-
 struct MumbleSharedMemory_t
 {
 #ifdef WIN32
@@ -155,7 +153,6 @@ void CMumbleSystem::PostRender()
 	{
 		V_wcscpy_safe( g_pMumbleMemory->name, L"Source engine: " );
 		wchar_t wcsGameDir[MAX_PATH];
-		Q_UTF8ToUnicode( COM_GetModDirectory(), wcsGameDir, sizeof(wcsGameDir) );
 		V_wcscat_safe( g_pMumbleMemory->name, wcsGameDir );
 
 		V_wcscpy_safe( g_pMumbleMemory->description, L"Links Source engine games to Mumble." );

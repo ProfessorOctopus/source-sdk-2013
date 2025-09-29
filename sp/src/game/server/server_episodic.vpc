@@ -34,7 +34,6 @@ $Project "Server (Munted)"
 		$File	"grenadethrown.h"
 		$File	"h_cycler.cpp"
 		$File	"h_cycler.h"
-		$File	"logic_achievement.cpp"
 		$File	"monstermaker.cpp"
 		$File	"monstermaker.h"
 		$File	"physics_bone_follower.h"
@@ -53,9 +52,6 @@ $Project "Server (Munted)"
 		}
 		$Folder	"HL2 DLL"
 		{
-			$File	"$SRCDIR\game\shared\episodic\achievements_ep1.cpp"
-			$File	"$SRCDIR\game\shared\episodic\achievements_ep2.cpp"
-			$File	"$SRCDIR\game\shared\episodic\achievements_epx.cpp"
 			$File	"hl2\ai_allymanager.cpp"
 			$File	"hl2\ai_behavior_actbusy.cpp"
 			$File	"hl2\ai_behavior_actbusy.h"
@@ -264,14 +260,10 @@ $Project "Server (Munted)"
 			$File	"hl2\weapon_rpg.h"
 			$File	"hl2\weapon_shotgun.cpp"
 			$File	"hl2\weapon_smg1.cpp"
-			$File	"episodic\weapon_striderbuster.cpp"
-			$File	"episodic\weapon_striderbuster.h"
 			$File	"hl2\weapon_stunstick.cpp" [!$MAPBASE] // See server_mapbase.vpc
 			$File	"hl2\weapon_stunstick.h" [!$MAPBASE] // See server_mapbase.vpc
-			$File	"episodic\ep1_gamestats.h"
-			$File	"episodic\ep2_gamestats.h"
-			$File	"episodic\ep1_gamestats.cpp" \
-					"episodic\ep2_gamestats.cpp"
+			$File	"episodic\weapon_striderbuster.h"
+			$File	"episodic\weapon_striderbuster.cpp"
 			{
 				$Configuration
 				{
