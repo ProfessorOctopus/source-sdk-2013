@@ -141,3 +141,13 @@ sp/game/mod_munted/bin/game_shader_dx9.dll
 sp/src/game/server/Debug_mod_munted/vc120.pdb
 sp/src/responserules/runtime/Debug/vc120.pdb
 sp/src/responserules/runtime/Debug/vc120.pdb
+sp/game/mod_munted/bin/client_base.vpc.lnk
+sp/game/mod_munted/bin/client_episodic.vpc.lnk
+sp/game/mod_munted/bin/game_shader_dx9.pdb
+sp/game/mod_munted/bin/server_base.vpc.lnk
+sp/game/mod_munted/bin/server_episodic.vpc.lnk
+sp/src/game/server/Debug_mod_munted/vc120.pdb
+sp/src/lib/public/vgui_controls.lib
+sp/src/lib/public/tier1.lib
+sp/src/lib/public/raytrace.lib
+sp/src/lib/public/mathlib.lib
