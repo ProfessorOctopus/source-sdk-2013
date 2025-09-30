@@ -1,9 +1,4 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose: 
-//
-//===========================================================================//
-
 #include "cbase.h"
 #include "ai_network.h"
 #include "ai_default.h"
@@ -37,17 +32,13 @@
 #include "physics_saverestore.h"
 #include "ai_memory.h"
 #include "npc_attackchopper.h"
-
 #ifdef HL2_EPISODIC
 #include "physics_bone_follower.h"
 #endif // HL2_EPISODIC
-
 #ifdef MAPBASE
 #include "filters.h"
 #endif
-
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+#include "tier0/memdbgon.h" // memdbgon must be the last include file in a .cpp file!!!
 
 // -------------------------------------
 // Bone controllers
@@ -56,7 +47,6 @@
 #define CHOPPER_MODEL_NAME	"models/combine_helicopter.mdl"
 #define CHOPPER_MODEL_CORPSE_NAME	"models/combine_helicopter_broken.mdl"
 #define CHOPPER_RED_LIGHT_SPRITE	"sprites/redglow1.vmt"
-
 #define CHOPPER_MAX_SMALL_CHUNKS	1
 #define CHOPPER_MAX_CHUNKS	3
 static const char *s_pChunkModelName[CHOPPER_MAX_CHUNKS] = 
@@ -68,20 +58,14 @@ static const char *s_pChunkModelName[CHOPPER_MAX_CHUNKS] =
 
 #define BOMB_SKIN_LIGHT_ON		1
 #define BOMB_SKIN_LIGHT_OFF		0
-
-
 #define	HELICOPTER_CHUNK_COCKPIT	"models/gibs/helicopter_brokenpiece_04_cockpit.mdl"
 #define	HELICOPTER_CHUNK_TAIL		"models/gibs/helicopter_brokenpiece_05_tailfan.mdl"
 #define	HELICOPTER_CHUNK_BODY		"models/gibs/helicopter_brokenpiece_06_body.mdl"
-
-
 #define CHOPPER_MAX_SPEED			(60 * 17.6f)
 #define CHOPPER_MAX_FIRING_SPEED	250.0f
 #define CHOPPER_MAX_GUN_DIST		2000.0f
-
 #define CHOPPER_ACCEL_RATE			500
 #define CHOPPER_ACCEL_RATE_BOOST	1500
-
 #define DEFAULT_FREE_KNOWLEDGE_DURATION 5.0f
 
 // -------------------------------------
@@ -91,11 +75,9 @@ static const char *s_pChunkModelName[CHOPPER_MAX_CHUNKS] =
 #define CHOPPER_MIN_AGGRESSIVE_CHASE_DIST_DIFF 64.0f
 #define	CHOPPER_AVOID_DIST				512.0f
 #define	CHOPPER_ARRIVE_DIST				128.0f
-
 #define CHOPPER_MAX_CIRCLE_OF_DEATH_FOLLOW_SPEED	450.0f
 #define CHOPPER_MIN_CIRCLE_OF_DEATH_RADIUS	150.0f
 #define CHOPPER_MAX_CIRCLE_OF_DEATH_RADIUS	350.0f
-
 #define CHOPPER_BOMB_DROP_COUNT 6
 
 // Bullrush
@@ -104,7 +86,6 @@ static const char *s_pChunkModelName[CHOPPER_MAX_CHUNKS] =
 #define CHOPPER_BULLRUSH_ENEMY_BOMB_TIME g_helicopter_bullrush_bomb_time.GetFloat()
 #define CHOPPER_BULLRUSH_ENEMY_BOMB_SPEED g_helicopter_bullrush_bomb_speed.GetFloat()
 #define CHOPPER_BULLRUSH_SHOOTING_VERTICAL_OFFSET g_helicopter_bullrush_shoot_height.GetFloat()
-
 #define CHOPPER_GUN_CHARGE_TIME		g_helicopter_chargetime.GetFloat()
 #define CHOPPER_GUN_IDLE_TIME		g_helicopter_idletime.GetFloat()
 #define CHOPPER_GUN_MAX_FIRING_DIST	g_helicopter_maxfiringdist.GetFloat()
@@ -124,10 +105,8 @@ static const char *s_pChunkModelName[CHOPPER_MAX_CHUNKS] =
 #endif
 
 #define CHOPPER_SLOW_BOMB_SPEED	250
-
 #define CHOPPER_BULLRUSH_SLOW_SHOOT_SPEED	250
 #define CHOPPER_BULLRUSH_SLOW_SHOOT_SPEED_SQ	(CHOPPER_BULLRUSH_SLOW_SHOOT_SPEED * CHOPPER_BULLRUSH_SLOW_SHOOT_SPEED)
-
 #define CHOPPER_BULLRUSH_SLOW_SHOOT_SPEED_2	450
 #define CHOPPER_BULLRUSH_SLOW_SHOOT_SPEED_2_SQ	(CHOPPER_BULLRUSH_SLOW_SHOOT_SPEED_2 * CHOPPER_BULLRUSH_SLOW_SHOOT_SPEED_2)
 
@@ -2098,44 +2077,41 @@ void CNPC_AttackHelicopter::ShootAtVehicle( const Vector &vBasePos, const Vector
 	DoMuzzleFlash();
 
 	// Do special code against episodic drivers
-	if ( hl2_episodic.GetBool() )
+	Vector vecVelocity;
+	GetEnemyVehicle()->GetVelocity(&vecVelocity, NULL);
+
+	float flSpeed = clamp(vecVelocity.Length(), 0.0f, 400.0f);
+	float flRange = RemapVal(flSpeed, 0.0f, 400.0f, 0.05f, 1.0f);
+
+	// Alter each shot's trajectory based on our speed
+	for (int i = 0; i < nShotsRemaining; i++)
 	{
-		Vector vecVelocity;
-		GetEnemyVehicle()->GetVelocity( &vecVelocity, NULL );
-		
-		float flSpeed = clamp( vecVelocity.Length(), 0.0f, 400.0f );
-		float flRange = RemapVal( flSpeed, 0.0f, 400.0f, 0.05f, 1.0f );
+		Vector vecShotDir;
 
-		// Alter each shot's trajectory based on our speed
-		for ( int i = 0; i < nShotsRemaining; i++ )
+		// If they're at a dead stand-still, just hit them
+		if (flRange <= 0.1f)
 		{
-			Vector vecShotDir;
-			
-			// If they're at a dead stand-still, just hit them
-			if ( flRange <= 0.1f )
-			{
-				VectorSubtract( GetEnemy()->EyePosition(), vBasePos, vecShotDir );
+			VectorSubtract(GetEnemy()->EyePosition(), vBasePos, vecShotDir);
 
-				Vector vecOffset;
-				vecOffset.Random( -40.0f, 40.0f );
-				vecShotDir += vecOffset;
-				VectorNormalize( vecShotDir );
-			}
-			else
-			{
-				// Aim in a cone around them
-				AimCloseToTargetButMiss( GetEnemy(), (3*12) * flRange, (10*12) * flRange, vBasePos, &vecShotDir );
-			}
-			
-			FireBulletsInfo_t info( 1, vBasePos, vecShotDir, VECTOR_CONE_PRECALCULATED, MAX_COORD_RANGE, m_iAmmoType );
-			info.m_iTracerFreq = 1;
-			FireBullets( info );
+			Vector vecOffset;
+			vecOffset.Random(-40.0f, 40.0f);
+			vecShotDir += vecOffset;
+			VectorNormalize(vecShotDir);
+		}
+		else
+		{
+			// Aim in a cone around them
+			AimCloseToTargetButMiss(GetEnemy(), (3 * 12) * flRange, (10 * 12) * flRange, vBasePos, &vecShotDir);
 		}
 
-		// We opt out of the rest of the function
-		// FIXME: Should we emulate the below functionality and have half the bullets attempt to miss admirably? -- jdw
-		return;
+		FireBulletsInfo_t info(1, vBasePos, vecShotDir, VECTOR_CONE_PRECALCULATED, MAX_COORD_RANGE, m_iAmmoType);
+		info.m_iTracerFreq = 1;
+		FireBullets(info);
 	}
+
+	// We opt out of the rest of the function
+	// FIXME: Should we emulate the below functionality and have half the bullets attempt to miss admirably? -- jdw
+	return;
 
 	// Pop one at the player based on how fast he's going
 	if ( m_nBurstHits < m_nMaxBurstHits )
@@ -3714,18 +3690,13 @@ void Chopper_BecomeChunks( CBaseEntity *pChopper )
 	}
 #endif//HL2_EPISODIC
 
-
 	Vector vecChunkPos = pChopper->GetAbsOrigin();
-
 	Vector vecRight(0,0,0);
 
-	if( hl2_episodic.GetBool() )
-	{
-		// We need to get a right hand vector to toss the cockpit and tail pieces
-		// so their motion looks like a continuation of the tailspin animation
-		// that the chopper plays before crashing.
-		pChopper->GetVectors( NULL, &vecRight, NULL );
-	}
+	// We need to get a right hand vector to toss the cockpit and tail pieces
+	// so their motion looks like a continuation of the tailspin animation
+	// that the chopper plays before crashing.
+	pChopper->GetVectors( NULL, &vecRight, NULL );
 
 	// Body
 	CHelicopterChunk *pBodyChunk = CHelicopterChunk::CreateHelicopterChunk( vecChunkPos, vecChunkAngles, pChopper->GetAbsVelocity(), HELICOPTER_CHUNK_BODY, CHUNK_BODY );
@@ -4293,7 +4264,7 @@ void CNPC_AttackHelicopter::UpdateFacingDirection( const Vector &vecActualDesire
 	{
 		if ( !IsLeading() )
 		{
-			if( IsCarpetBombing() && hl2_episodic.GetBool() )
+			if( IsCarpetBombing())
 			{
 				m_vecDesiredFaceDir = vecActualDesiredPosition - GetAbsOrigin();
 			}
@@ -4302,10 +4273,7 @@ void CNPC_AttackHelicopter::UpdateFacingDirection( const Vector &vecActualDesire
 				// If we've seen the target recently, face the target.
 				m_vecDesiredFaceDir = m_vecTargetPosition - GetAbsOrigin();
 			}
-			else
-			{
-				// Remain facing the way you were facing...
-			}
+			else{} // Remain facing the way you were facing...
 		}
 		else
 		{
@@ -5127,34 +5095,20 @@ void CGrenadeHelicopter::Spawn( void )
 	m_flLifetime = BOMB_LIFETIME * 2.0;
 #endif // HL2_EPISODIC
 
-	if ( hl2_episodic.GetBool() )
-	{
-		// Disallow this, we'd rather deal with them as physobjects
-		m_takedamage = DAMAGE_NO;
-	}
-	else
-	{
-		// Allow player to blow this puppy up in the air
-		m_takedamage = DAMAGE_YES;
-	}
-
+	// Disallow this, we'd rather deal with them as physobjects
+	m_takedamage = DAMAGE_NO;
 	m_bActivated = false;
 	m_pWarnSound = NULL;
 	m_bExplodeOnContact = false;
-
 	m_flDamage = sk_helicopter_grenadedamage.GetFloat();
 
 	g_pNotify->AddEntity( this, this );
 
-	if( hl2_episodic.GetBool() )
-	{
-		SetContextThink( &CGrenadeHelicopter::AnimateThink, gpGlobals->curtime, s_pAnimateThinkContext );
-	}
+	SetContextThink( &CGrenadeHelicopter::AnimateThink, gpGlobals->curtime, s_pAnimateThinkContext );
 }
 
-
 //------------------------------------------------------------------------------
-// On Remve
+// On Remove
 //------------------------------------------------------------------------------
 void CGrenadeHelicopter::UpdateOnRemove()
 {
@@ -5205,22 +5159,15 @@ void CGrenadeHelicopter::BecomeActive()
 
 	SetThink( &CGrenadeHelicopter::ExplodeThink );
 	
-	if ( hl2_episodic.GetBool() )
+	if (HasSpawnFlags(SF_HELICOPTER_GRENADE_DUD) == false)
 	{
-		if ( HasSpawnFlags( SF_HELICOPTER_GRENADE_DUD ) == false )
-		{
-			SetNextThink( gpGlobals->curtime + GetBombLifetime() );
-		}
-		else
-		{
-			// NOTE: A dud will not explode after a set time, only when launched!
-			SetThink( NULL );
-			return;
-		}
+		SetNextThink(gpGlobals->curtime + GetBombLifetime());
 	}
 	else
 	{
-		SetNextThink( gpGlobals->curtime + GetBombLifetime() );
+		// NOTE: A dud will not explode after a set time, only when launched!
+		SetThink(NULL);
+		return;
 	}
 
 	if ( !bMegaBomb )
@@ -5397,14 +5344,10 @@ void CGrenadeHelicopter::VPhysicsCollision( int index, gamevcollisionevent_t *pE
 	}
 #endif
 	
-
-	if( hl2_episodic.GetBool() )
+	float flImpactSpeed = pEvent->preVelocity->Length();
+	if( flImpactSpeed > 400.0f && pEvent->pEntities[ 1 ]->IsWorld() )
 	{
-		float flImpactSpeed = pEvent->preVelocity->Length();
-		if( flImpactSpeed > 400.0f && pEvent->pEntities[ 1 ]->IsWorld() )
-		{
-			EmitSound( "NPC_AttackHelicopterGrenade.HardImpact" );
-		}
+		EmitSound( "NPC_AttackHelicopterGrenade.HardImpact" );
 	}
 }
 
@@ -5415,15 +5358,10 @@ void CGrenadeHelicopter::VPhysicsCollision( int index, gamevcollisionevent_t *pE
 //------------------------------------------------------------------------------
 Vector CGrenadeHelicopter::PhysGunLaunchVelocity( const Vector &forward, float flMass )
 {
-	// return ( striderbuster_shot_velocity.GetFloat() * forward );
-
 	return BaseClass::PhysGunLaunchVelocity(forward,flMass) * sk_helicopter_grenaderadius.GetFloat();
 }
 #endif
 
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 float CGrenadeHelicopter::GetBombLifetime()
 {
 #if HL2_EPISODIC
@@ -5433,7 +5371,6 @@ float CGrenadeHelicopter::GetBombLifetime()
 #endif
 }
 
-
 //------------------------------------------------------------------------------
 // Pow!
 //------------------------------------------------------------------------------
@@ -5442,10 +5379,8 @@ int CGrenadeHelicopter::OnTakeDamage( const CTakeDamageInfo &info )
 	// We don't take blast damage
 	if ( info.GetDamageType() & DMG_BLAST )
 		return 0;
-
 	return BaseClass::OnTakeDamage( info );
 }
-
 
 //------------------------------------------------------------------------------
 // Pow!
@@ -5542,12 +5477,9 @@ void CGrenadeHelicopter::ExplodeConcussion( CBaseEntity *pOther )
 		if ( pOther->IsWorld() )
 			return;
 
-		if ( hl2_episodic.GetBool() )
-		{
-			// Don't hit anything other than vehicles
-			if ( pOther->GetCollisionGroup() != COLLISION_GROUP_VEHICLE )
-				return;
-		}
+		// Don't hit anything other than vehicles
+		if (pOther->GetCollisionGroup() != COLLISION_GROUP_VEHICLE)
+			return;
 	}
 
 #ifdef HL2_EPISODIC

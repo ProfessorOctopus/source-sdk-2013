@@ -1,9 +1,4 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose: 
-//
-//=============================================================================//
-
 #include "cbase.h"
 #include "gamerules.h"
 #include "ammodef.h"
@@ -150,9 +145,7 @@ CGameRules::CGameRules() : CAutoGameSystemPerFrame( "CGameRules" )
 	Assert( !g_pGameRules );
 	g_pGameRules = this;
 }	
-
 #else //}{
-
 // In tf_gamerules.cpp or hl_gamerules.cpp.
 extern IVoiceGameMgrHelper *g_pVoiceGameMgrHelper;
 
@@ -439,7 +432,6 @@ void CGameRules::RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc
 		}
 		
 		CTakeDamageInfo adjustedInfo = info;
-		//Msg("%s: Blocked damage: %f percent (in:%f  out:%f)\n", pEntity->GetClassname(), flBlockedDamagePercent * 100, flAdjustedDamage, flAdjustedDamage - (flAdjustedDamage * flBlockedDamagePercent) );
 		adjustedInfo.SetDamage( flAdjustedDamage - (flAdjustedDamage * flBlockedDamagePercent) );
 
 		// Now make a consideration for skill level!
@@ -494,13 +486,11 @@ void CGameRules::RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc
 			{
 				bIsPrimary = false;
 			}
-
 			gamestats->Event_WeaponHit( player, bIsPrimary, (pWeapon != NULL) ? player->GetActiveWeapon()->GetClassname() : "NULL", info );
 		}
 #endif
 	}
 }
-
 
 bool CGameRules::ClientCommand( CBaseEntity *pEdict, const CCommand &args )
 {
@@ -509,10 +499,8 @@ bool CGameRules::ClientCommand( CBaseEntity *pEdict, const CCommand &args )
 		if( GetVoiceGameMgr()->ClientCommand( static_cast<CBasePlayer*>(pEdict), args ) )
 			return true;
 	}
-
 	return false;
 }
-
 
 void CGameRules::FrameUpdatePostEntityThink()
 {

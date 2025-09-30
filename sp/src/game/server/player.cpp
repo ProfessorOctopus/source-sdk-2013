@@ -1425,13 +1425,6 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 		HapticsDamage(this,info);
 #endif
 
-	// this cast to INT is critical!!! If a player ends up with 0.5 health, the engine will get that
-	// as an int (zero) and think the player is dead! (this will incite a clientside screentilt, etc)
-	
-	// NOTENOTE: jdw - We are now capable of retaining the mantissa of this damage value and deferring its application
-	
-	// info.SetDamage( (int)info.GetDamage() );
-
 	// Call up to the base class
 	fTookDamage = BaseClass::OnTakeDamage( info );
 
@@ -1471,9 +1464,7 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 	// let the suit give player the diagnosis
 
 	// UNDONE: add sounds for types of damage sustained (ie: burn, shock, slash )
-
 	// UNDONE: still need to record damage and heal messages for the following types
-
 		// DMG_BURN	
 		// DMG_FREEZE
 		// DMG_BLAST
@@ -1508,9 +1499,6 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 		{
 			if (m_lastDamageAmount > 5)
 				SetSuitUpdate("!HEV_DMG6", false, SUIT_NEXT_IN_30SEC);	// blood loss detected
-			//else
-			//	SetSuitUpdate("!HEV_DMG0", false, SUIT_NEXT_IN_30SEC);	// minor laceration
-			
 			bitsDamage &= ~DMG_BULLET;
 			ffound = true;
 		}
@@ -1577,7 +1565,7 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 
 	float flPunch = -2;
 
-	if( hl2_episodic.GetBool() && info.GetAttacker() && !FInViewCone( info.GetAttacker() ) )
+	if(info.GetAttacker() && !FInViewCone( info.GetAttacker() ) )
 	{
 		if( info.GetDamage() > 10.0f )
 			flPunch = -10;
@@ -6867,7 +6855,6 @@ bool CBasePlayer::ClientCommand( const CCommand &args )
 				SetObserverTarget( target );
 			}
 		}
-		
 		return true;
 	}
 
@@ -6927,7 +6914,6 @@ bool CBasePlayer::ClientCommand( const CCommand &args )
 		}
 		return true;
 	}
-
 	return false;
 }
 
@@ -6955,23 +6941,9 @@ bool CBasePlayer::BumpWeapon( CBaseCombatWeapon *pWeapon )
 		return false;
 	}
 
-	// Act differently in the episodes
-	if ( hl2_episodic.GetBool() )
-	{
-		// Don't let the player touch the item unless unobstructed
-		if ( !UTIL_ItemCanBeTouchedByPlayer( pWeapon, this ) && !gEvilImpulse101 )
-			return false;
-	}
-	else
-	{
-		// Don't let the player fetch weapons through walls (use MASK_SOLID so that you can't pickup through windows)
-#ifdef MAPBASE
-		if( (pWeapon->FVisible( this, MASK_SOLID ) == false && !(GetFlags() & FL_NOTARGET)) && !HasSpawnFlags(SF_WEAPON_ALWAYS_TOUCHABLE) )
-#else
-		if( pWeapon->FVisible( this, MASK_SOLID ) == false && !(GetFlags() & FL_NOTARGET) )
-#endif
-			return false;
-	}
+	// Don't let the player touch the item unless unobstructed
+	if ( !UTIL_ItemCanBeTouchedByPlayer( pWeapon, this ) && !gEvilImpulse101 )
+		return false;
 	
 	// ----------------------------------------
 	// If I already have it just take the ammo

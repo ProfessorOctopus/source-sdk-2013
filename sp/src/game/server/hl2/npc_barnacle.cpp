@@ -390,7 +390,7 @@ int	CNPC_Barnacle::OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo )
 		SetActivity( ACT_SMALL_FLINCH );
 	}
 
-	if( hl2_episodic.GetBool() && info.GetAttacker() && info.GetAttacker()->Classify() == CLASS_PLAYER_ALLY_VITAL )
+	if(info.GetAttacker() && info.GetAttacker()->Classify() == CLASS_PLAYER_ALLY_VITAL )
 	{
 		if( FClassnameIs( info.GetAttacker(), "npc_alyx" ) )
 		{
@@ -1080,15 +1080,8 @@ void CNPC_Barnacle::LiftRagdoll( float flBiteZOffset )
   		if ( GetEnemy()->Classify() == CLASS_ZOMBIE )
 		{
 			// lifted the prey high enough to see it's a zombie. Spit it out.
-			if ( hl2_episodic.GetBool() )
-			{
-				m_bLiftingPrey = false;
-				SetActivity( (Activity)ACT_BARNACLE_BITE_SMALL_THINGS );
-			}
-			else
-			{
-				SpitPrey();
-			}
+			m_bLiftingPrey = false;
+			SetActivity( (Activity)ACT_BARNACLE_BITE_SMALL_THINGS );
 			return;
 		}
 

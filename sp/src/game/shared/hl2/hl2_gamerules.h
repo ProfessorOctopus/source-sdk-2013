@@ -1,9 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
 // Purpose: Game rules for Half-Life 2.
-//
 //=============================================================================//
-
 #ifndef HL2_GAMERULES_H
 #define HL2_GAMERULES_H
 #ifdef _WIN32
@@ -39,8 +36,6 @@ public:
 	virtual void UpdateOnRemove();
 
 	// Inputs
-	void InputEpisodicOn( inputdata_t &inputdata );
-	void InputEpisodicOff( inputdata_t &inputdata );
 	void InputSetFriendlyFire( inputdata_t &inputdata );
 	void InputSetDefaultCitizenType( inputdata_t &inputdata );
 	void InputSetLegacyFlashlight( inputdata_t &inputdata );
@@ -69,7 +64,6 @@ public:
 
 	// Damage Query Overrides.
 	virtual bool			Damage_IsTimeBased( int iDmgType );
-	// TEMP:
 	virtual int				Damage_GetTimeBased( void );
 	
 	virtual bool			ShouldCollide( int collisionGroup0, int collisionGroup1 );
@@ -115,7 +109,6 @@ private:
 
 	virtual bool			ShouldBurningPropsEmitLight();
 public:
-
 	bool AllowDamage( CBaseEntity *pVictim, const CTakeDamageInfo &info );
 
 	bool	NPC_ShouldDropGrenade( CBasePlayer *pRecipient );
@@ -144,7 +137,6 @@ public:
 #endif
 
 private:
-
 	float	m_flLastHealthDropTime;
 	float	m_flLastGrenadeDropTime;
 
@@ -157,11 +149,8 @@ private:
 
 	void AdjustPlayerDamageTaken( CTakeDamageInfo *pInfo );
 	float AdjustPlayerDamageInflicted( float damage );
-
-	int						DefaultFOV( void ) { return 75; }
 #endif
 };
-
 
 //-----------------------------------------------------------------------------
 // Gets us at the Half-Life 2 game rules

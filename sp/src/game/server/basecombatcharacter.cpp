@@ -1753,7 +1753,7 @@ bool CBaseCombatCharacter::BecomeRagdoll( const CTakeDamageInfo &info, const Vec
 		return true;
 	}
 
-	if( hl2_episodic.GetBool() && Classify() == CLASS_PLAYER_ALLY_VITAL )
+	if(Classify() == CLASS_PLAYER_ALLY_VITAL )
 	{
 		CreateServerRagdoll( this, m_nForceBone, newinfo, COLLISION_GROUP_INTERACTIVE_DEBRIS, ShouldFadeServerRagdolls() );
 		RemoveDeferred();
@@ -1947,35 +1947,31 @@ void CBaseCombatCharacter::ThrowDirForWeaponStrip( CBaseCombatWeapon *pWeapon, c
 	// This is necessary for the physgun upgrade scene.
 	if ( FClassnameIs( pWeapon, "weapon_physcannon" ) )
 	{
-		if( hl2_episodic.GetBool() )
+		// It has been discovered that it's possible to throw the physcannon out of the world this way.
+		// So try to find a direction to throw the physcannon that's legal.
+		Vector vecOrigin = EyePosition();
+		Vector vecRight;
+
+		CrossProduct(vecForward, Vector(0, 0, 1), vecRight);
+
+		Vector vecTest[4];
+		vecTest[0] = vecForward;
+		vecTest[1] = -vecForward;
+		vecTest[2] = vecRight;
+		vecTest[3] = -vecRight;
+
+		trace_t tr;
+		int i;
+		for (i = 0; i < 4; i++)
 		{
-			// It has been discovered that it's possible to throw the physcannon out of the world this way.
-			// So try to find a direction to throw the physcannon that's legal.
-			Vector vecOrigin = EyePosition();
-			Vector vecRight;
+			UTIL_TraceLine(vecOrigin, vecOrigin + vecTest[i] * 48.0f, MASK_SOLID_BRUSHONLY, this, COLLISION_GROUP_NONE, &tr);
 
-			CrossProduct( vecForward, Vector( 0, 0, 1), vecRight );
-
-			Vector vecTest[ 4 ];
-			vecTest[0] = vecForward;
-			vecTest[1] = -vecForward;
-			vecTest[2] = vecRight;
-			vecTest[3] = -vecRight;
-
-			trace_t tr;
-			int i;
-			for( i = 0 ; i < 4 ; i++ )
+			if (!tr.startsolid && tr.fraction == 1.0f)
 			{
-				UTIL_TraceLine( vecOrigin, vecOrigin + vecTest[ i ] * 48.0f, MASK_SOLID_BRUSHONLY, this, COLLISION_GROUP_NONE, &tr );
-
-				if ( !tr.startsolid && tr.fraction == 1.0f )
-				{
-					*pVecThrowDir = vecTest[ i ];
-					return;
-				}
+				*pVecThrowDir = vecTest[i];
+				return;
 			}
 		}
-
 		// Well, fall through to what we did before we tried to make this a bit more robust.
 		*pVecThrowDir = vecForward;
 	}
@@ -3634,7 +3630,7 @@ CBaseEntity *CBaseCombatCharacter::Weapon_FindUsable( const Vector &range )
 	if (HasContext("weapon_conservative:1"))
 		bConservative = true;
 #ifdef HL2_DLL
-	else if (hl2_episodic.GetBool() && !GetActiveWeapon())
+	else if (!GetActiveWeapon())
 	{
 		// Unarmed citizens are conservative in their weapon finding...in Episode One
 		if (Classify() != CLASS_PLAYER_ALLY_VITAL && Q_strncmp(STRING(gpGlobals->mapname), "ep1_", 4) == 0)
@@ -3895,9 +3891,7 @@ void CBaseCombatCharacter::ApplyStressDamage( IPhysicsObject *pPhysics, bool bRe
 #ifdef HL2_DLL
 	if( Classify() == CLASS_PLAYER_ALLY || Classify() == CLASS_PLAYER_ALLY_VITAL )
 	{
-		// Bypass stress completely for allies and vitals.
-		if( hl2_episodic.GetBool() )
-			return;
+		return;
 	}
 #endif//HL2_DLL
 

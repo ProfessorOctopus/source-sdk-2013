@@ -5,7 +5,9 @@
 //-----------------------------------------------------------------------------
 
 $Macro SRCDIR		"..\.."
-$Macro OUTBINDIR	"$SRCDIR\..\game\bin"
+$Macro GAMENAME 	"munted" [!$SOURCESDK]
+$Macro GAMENAME 	"mod_munted" [$SOURCESDK]
+$Macro OUTBINDIR	"$SRCDIR\..\game\$GAMENAME\bin"
 $Macro OUTBINNAME	"vrad"
 
 $Include "$SRCDIR\vpc_scripts\source_exe_con_base.vpc"

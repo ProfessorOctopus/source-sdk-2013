@@ -1,12 +1,5 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose: 
-//
-// $NoKeywords: $
-//=============================================================================//
-
 #include "cbase.h"
-
 #include "decals.h"
 #include "effect_dispatch_data.h"
 #include "model_types.h"
@@ -19,7 +12,6 @@
 #include "debugoverlay_shared.h"
 #include "coordsize.h"
 #include "vphysics/performance.h"
-
 #ifdef CLIENT_DLL
 	#include "c_te_effect_dispatch.h"
 #else
@@ -29,38 +21,23 @@
 	#include "player_pickup.h"
 	#include "waterbullet.h"
 	#include "func_break.h"
-
 #ifdef HL2MP
 	#include "te_hl2mp_shotgun_shot.h"
 #endif
-
 	#include "gamestats.h"
-
 #endif
-
-#ifdef HL2_EPISODIC
-ConVar hl2_episodic( "hl2_episodic", "1", FCVAR_REPLICATED );
-#else
-ConVar hl2_episodic( "hl2_episodic", "0", FCVAR_REPLICATED );
-#endif//HL2_EPISODIC
-
 #ifdef PORTAL
 	#include "prop_portal_shared.h"
 #endif
-
 #ifdef TF_DLL
 #include "tf_gamerules.h"
 #include "tf_weaponbase.h"
 #endif // TF_DLL
-
 #ifdef MAPBASE_VSCRIPT
 #include "mapbase/vscript_funcs_shared.h"
 #endif
-
 #include "rumble_shared.h"
-
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+#include "tier0/memdbgon.h" // memdbgon must be the last include file in a .cpp file!!!
 
 #ifdef GAME_DLL
 	ConVar ent_debugkeys( "ent_debugkeys", "" );
@@ -91,7 +68,6 @@ ConVar	ai_shot_notify_targets( "ai_shot_notify_targets", "0", FCVAR_NONE, "Allow
 static double s_LastEntityReasonableEmitTime;
 bool CheckEmitReasonablePhysicsSpew()
 {
-
 	// Reported recently?
 	double now = Plat_FloatTime();
 	if ( now >= s_LastEntityReasonableEmitTime && now < s_LastEntityReasonableEmitTime + 5.0 )
@@ -99,12 +75,10 @@ bool CheckEmitReasonablePhysicsSpew()
 		// Already reported recently
 		return false;
 	}
-
 	// Not reported recently.  Report it now
 	s_LastEntityReasonableEmitTime = now;
 	return true;
 }
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Spawn some blood particles
@@ -167,7 +141,6 @@ const Vector& CBaseEntity::GetViewOffset() const
 { 
 	return m_vecViewOffset; 
 }
-
 
 //-----------------------------------------------------------------------------
 // center point of entity

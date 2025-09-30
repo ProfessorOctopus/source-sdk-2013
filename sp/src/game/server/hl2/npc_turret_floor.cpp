@@ -1,10 +1,4 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose: 
-//
-// $NoKeywords: $
-//=============================================================================//
-
 #include "cbase.h"
 #include "npc_turret_floor.h"
 #include "ai_senses.h"
@@ -22,21 +16,17 @@
 #include "beam_shared.h"
 #include "props.h"
 #include "particle_parse.h"
-
 #ifdef PORTAL
 	#include "prop_portal_shared.h"
 	#include "portal_util_shared.h"
 #endif
-
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+#include "tier0/memdbgon.h" // memdbgon must be the last include file in a .cpp file!!!
 
 const char *GetMassEquivalent(float flMass);
 
 #define	DISABLE_SHOT	0
 
-//Debug visualization
-ConVar	g_debug_turret( "g_debug_turret", "0" );
+ConVar	g_debug_turret( "g_debug_turret", "0" ); //Debug visualization
 
 extern ConVar physcannon_tracelength;
 
@@ -45,8 +35,7 @@ extern ConVar npc_alyx_interact_turrets;
 #endif
 
 #ifdef MAPBASE
-// m_iKeySkin has been replaced with the original m_nSkin so we can make it show up in Hammer, etc.
-#define m_iKeySkin m_nSkin
+#define m_iKeySkin m_nSkin // m_iKeySkin has been replaced with the original m_nSkin so we can make it show up in Hammer, etc.
 #endif
 
 // Interactions
@@ -56,17 +45,13 @@ float CNPC_FloorTurret::fMaxTipControllerVelocity = 300.0f * 300.0f;
 float CNPC_FloorTurret::fMaxTipControllerAngularVelocity = 90.0f * 90.0f;
 
 #define	LASER_BEAM_SPRITE			"effects/laser1.vmt"
-
 #define	FLOOR_TURRET_MODEL			"models/combine_turrets/floor_turret.mdl"
 #define	FLOOR_TURRET_MODEL_CITIZEN	"models/combine_turrets/citizen_turret.mdl"
 #define FLOOR_TURRET_GLOW_SPRITE	"sprites/glow1.vmt"
-// #define FLOOR_TURRET_BC_YAW			"aim_yaw"
-// #define FLOOR_TURRET_BC_PITCH		"aim_pitch"
 #define	FLOOR_TURRET_RANGE			1200
 #define	FLOOR_TURRET_MAX_WAIT		5
 #define FLOOR_TURRET_SHORT_WAIT		2.0		// Used for FAST_RETIRE spawnflag
 #define	FLOOR_TURRET_PING_TIME		1.0f	//LPB!!
-
 #define	FLOOR_TURRET_VOICE_PITCH_LOW	45
 #define	FLOOR_TURRET_VOICE_PITCH_HIGH	100
 
@@ -146,7 +131,6 @@ BEGIN_DATADESC( CNPC_FloorTurret )
 	DEFINE_INPUTFUNC( FIELD_VOID, "DestroySprite", InputDestroySprite ),
 #endif
 	DEFINE_INPUTFUNC( FIELD_VOID, "SelfDestruct", InputSelfDestruct ),
-
 	DEFINE_OUTPUT( m_OnDeploy, "OnDeploy" ),
 	DEFINE_OUTPUT( m_OnRetire, "OnRetire" ),
 	DEFINE_OUTPUT( m_OnTipped, "OnTipped" ),
@@ -155,13 +139,8 @@ BEGIN_DATADESC( CNPC_FloorTurret )
 #ifdef MAPBASE
 	DEFINE_OUTPUT( m_OnStartTipped, "OnStartTipped" ),
 #endif
-
 	DEFINE_BASENPCINTERACTABLE_DATADESC(),
-
-	// DEFINE_FIELD( m_ShotSounds, FIELD_SHORT ),
-
 END_DATADESC()
-
 LINK_ENTITY_TO_CLASS( npc_turret_floor, CNPC_FloorTurret );
 
 //-----------------------------------------------------------------------------
@@ -187,13 +166,9 @@ CNPC_FloorTurret::CNPC_FloorTurret( void ) :
 	m_bSelfDestructing( false )
 {
 	m_vecGoalAngles.Init();
-
 	m_vecEnemyLKP = vec3_invalid;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 Class_T	CNPC_FloorTurret::Classify( void ) 
 {
 	if ( m_bEnabled ) 
@@ -204,13 +179,9 @@ Class_T	CNPC_FloorTurret::Classify( void )
 
 		return CLASS_COMBINE;
 	}
-
 	return CLASS_NONE;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CNPC_FloorTurret::UpdateOnRemove( void )
 {
 	if ( m_pMotionController != NULL )
@@ -372,9 +343,6 @@ void CNPC_FloorTurret::Spawn( void )
 	SetState(NPC_STATE_IDLE);
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CNPC_FloorTurret::Activate( void )
 {
 	BaseClass::Activate();
@@ -395,8 +363,6 @@ void CNPC_FloorTurret::Activate( void )
 	}
 }
 
-//-----------------------------------------------------------------------------
-
 bool CNPC_FloorTurret::CreateVPhysics( void )
 {
 	//Spawn our physics hull
@@ -404,7 +370,6 @@ bool CNPC_FloorTurret::CreateVPhysics( void )
 	{
 		DevMsg( "npc_turret_floor unable to spawn physics object!\n" );
 	}
-
 	return true;
 }
 
@@ -498,13 +463,9 @@ void CNPC_FloorTurret::Deploy( void )
 
 		EmitSound( "NPC_FloorTurret.Move" );
 	}
-
 	m_flLastSight = gpGlobals->curtime + FLOOR_TURRET_MAX_WAIT;	
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CNPC_FloorTurret::OnPhysGunPickup( CBasePlayer *pPhysGunUser, PhysGunPickup_t reason )
 {
 	m_hPhysicsAttacker = pPhysGunUser;
@@ -531,16 +492,8 @@ void CNPC_FloorTurret::OnPhysGunPickup( CBasePlayer *pPhysGunUser, PhysGunPickup
 		bool bBehind = DotProduct( vecToTurret, forward ) < 0.85f;
 
 		// Correct our angles only if we're not upright or we're mostly behind the turret
-		if ( hl2_episodic.GetBool() )
-		{
-			m_bUseCarryAngles = ( bUpright == false || bBehind );
-		}
-		else
-		{
-			m_bUseCarryAngles = ( bUpright == false );
-		}
+		m_bUseCarryAngles = ( bUpright == false || bBehind );
 	}
-
 	// Clear out our last NPC to kick me, because it makes no sense now
 	m_hLastNPCToKickMe = NULL;
 }

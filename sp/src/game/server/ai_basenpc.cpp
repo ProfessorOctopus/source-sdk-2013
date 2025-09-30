@@ -1,11 +1,5 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose: 
-//
-//=============================================================================//
-
 #include "cbase.h"
-
 #include "ai_basenpc.h"
 #include "fmtstr.h"
 #include "activitylist.h"
@@ -22,12 +16,10 @@
 #include "worldsize.h"
 #include "game.h"
 #include "shot_manipulator.h"
-
 #ifdef HL2_DLL
 #include "ai_interactions.h"
 #include "hl2_gamerules.h"
 #endif // HL2_DLL
-
 #include "ai_network.h"
 #include "ai_networkmanager.h"
 #include "ai_pathfinder.h"
@@ -86,25 +78,20 @@
 #include "death_pose.h"
 #include "datacache/imdlcache.h"
 #include "vstdlib/jobthread.h"
-
 #ifdef HL2_EPISODIC
 #include "npc_alyx_episodic.h"
 #endif
-
 #ifdef PORTAL
 	#include "prop_portal_shared.h"
 #endif
-
 #ifdef MAPBASE
 #include "mapbase/matchers.h"
 #include "items.h"
 #include "point_camera.h"
 #endif
-
 #ifdef MAPBASE_VSCRIPT
 #include "mapbase/vscript_funcs_shared.h"
 #endif
-
 #include "env_debughistory.h"
 #include "collisionutils.h"
 
@@ -113,20 +100,15 @@ extern ConVar sk_healthkit;
 // dvs: for opening doors -- these should probably not be here
 #include "ai_route.h"
 #include "ai_waypoint.h"
-
 #include "utlbuffer.h"
 #include "gamestats.h"
-
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+#include "tier0/memdbgon.h" // memdbgon must be the last include file in a .cpp file!!!
 
 #ifdef __clang__
 	// These clang 3.1 warnings don't seem very useful, and cannot easily be
 	// avoided in this file.
 	#pragma GCC diagnostic ignored "-Wdangling-else"	// warning: add explicit braces to avoid dangling else [-Wdangling-else]
 #endif
-
-//#define DEBUG_LOOK
 
 bool RagdollManager_SaveImportant( CAI_BaseNPC *pNPC );
 
@@ -3438,13 +3420,9 @@ void CAI_BaseNPC::RunAnimation( void )
 			//But here it doesn't and not setting it causes any animation set through here to be stomped by the 
 			//ideal sequence before it has a chance of playing out (since there's code that reselects the ideal 
 			//sequence if it doesn't match the current one).
-			if ( hl2_episodic.GetBool() )
-			{
-				m_nIdealSequence = iSequence;
-			}
+			m_nIdealSequence = iSequence;
 		}
 	}
-
 	DispatchAnimEvents( this );
 }
 
@@ -14417,7 +14395,7 @@ bool CAI_BaseNPC::IsCoverPosition( const Vector &vecThreat, const Vector &vecPos
 
 	AI_TraceLOS( vecThreat, vecPosition, this, &tr, &filter );
 
-	if( tr.fraction != 1.0 && hl2_episodic.GetBool() )
+	if( tr.fraction != 1.0)
 	{
 		if( tr.m_pEnt->m_iClassname == m_iClassname )
 		{

@@ -2969,7 +2969,7 @@ int CHL2_Player::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 	}
 
 
-	if( (info.GetDamageType() & DMG_SLASH) && hl2_episodic.GetBool() )
+	if( (info.GetDamageType() & DMG_SLASH))
 	{
 		if( m_afPhysicsFlags & PFLAG_USING )
 		{
@@ -2978,14 +2978,10 @@ int CHL2_Player::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 			SuspendUse( 0.5f );
 		}
 	}
-
-
 	// Call the base class implementation
 	return BaseClass::OnTakeDamage_Alive( info );
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CHL2_Player::OnDamagedByExplosion( const CTakeDamageInfo &info )
 {
 	if ( info.GetInflictor() && info.GetInflictor()->ClassMatches( "mortarshell" ) )
@@ -2997,8 +2993,6 @@ void CHL2_Player::OnDamagedByExplosion( const CTakeDamageInfo &info )
 	BaseClass::OnDamagedByExplosion( info );
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CHL2_Player::ShouldShootMissTarget( CBaseCombatCharacter *pAttacker )
 {
 	if( gpGlobals->curtime > m_flTargetFindTime )
@@ -3007,7 +3001,6 @@ bool CHL2_Player::ShouldShootMissTarget( CBaseCombatCharacter *pAttacker )
 		m_flTargetFindTime = gpGlobals->curtime + random->RandomFloat( 3, 5 );
 		return true;
 	}
-
 	return false;
 }
 
@@ -3026,14 +3019,11 @@ void CHL2_Player::CombineBallSocketed( CPropCombineBall *pCombineBall )
 #endif
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CHL2_Player::Event_KilledOther( CBaseEntity *pVictim, const CTakeDamageInfo &info )
 {
 	BaseClass::Event_KilledOther( pVictim, info );
 
 #ifdef HL2_EPISODIC
-
 	CAI_BaseNPC **ppAIs = g_AI_Manager.AccessAIs();
 
 	for ( int i = 0; i < g_AI_Manager.NumAIs(); i++ )
@@ -3043,12 +3033,9 @@ void CHL2_Player::Event_KilledOther( CBaseEntity *pVictim, const CTakeDamageInfo
 			ppAIs[i]->OnPlayerKilledOther( pVictim, info );
 		}
 	}
-
 #endif
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CHL2_Player::Event_Killed( const CTakeDamageInfo &info )
 {
 	BaseClass::Event_Killed( info );
@@ -3832,13 +3819,10 @@ void CHL2_Player::ForceDropOfCarriedPhysObjects( CBaseEntity *pOnlyIfHoldingThis
 	}
 
 #ifdef HL2_EPISODIC
-	if ( hl2_episodic.GetBool() )
+	CBaseEntity *pHeldEntity = PhysCannonGetHeldEntity( GetActiveWeapon() );
+	if( pHeldEntity && pHeldEntity->ClassMatches( "grenade_helicopter" ) )
 	{
-		CBaseEntity *pHeldEntity = PhysCannonGetHeldEntity( GetActiveWeapon() );
-		if( pHeldEntity && pHeldEntity->ClassMatches( "grenade_helicopter" ) )
-		{
-			return;
-		}
+		return;
 	}
 #endif
 

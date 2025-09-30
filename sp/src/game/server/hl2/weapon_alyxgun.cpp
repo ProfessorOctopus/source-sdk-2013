@@ -1,18 +1,10 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose:
-//
-//=============================================================================//
-
 #include "cbase.h"
-
 #include "weapon_alyxgun.h"
 #include "npcevent.h"
 #include "ai_basenpc.h"
 #include "globalstate.h"
-
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+#include "tier0/memdbgon.h" // memdbgon must be the last include file in a .cpp file!!!
 
 IMPLEMENT_SERVERCLASS_ST(CWeaponAlyxGun, DT_WeaponAlyxGun)
 END_SEND_TABLE()
@@ -101,11 +93,6 @@ acttable_t	CWeaponAlyxGun::m_acttable[] =
 	{ ACT_READINESS_RELAXED_TO_STIMULATED_WALK, ACT_READINESS_PISTOL_RELAXED_TO_STIMULATED_WALK, false },
 	{ ACT_READINESS_AGITATED_TO_STIMULATED, ACT_READINESS_PISTOL_AGITATED_TO_STIMULATED, false },
 	{ ACT_READINESS_STIMULATED_TO_RELAXED, ACT_READINESS_PISTOL_STIMULATED_TO_RELAXED, false },
-
-
-//	{ ACT_ARM,				ACT_ARM_PISTOL,					true },
-//	{ ACT_DISARM,			ACT_DISARM_PISTOL,				true },
-
 #ifdef MAPBASE
 	// HL2:DM activities (for third-person animations in SP)
 	{ ACT_HL2MP_IDLE,                    ACT_HL2MP_IDLE_PISTOL,                    false },
@@ -127,34 +114,24 @@ IMPLEMENT_ACTTABLE(CWeaponAlyxGun);
 #define TOOCLOSETIMER_OFF	0.0f
 #define ALYX_TOOCLOSETIMER	1.0f		// Time an enemy must be tooclose before Alyx is allowed to shoot it.
 
-//=========================================================
 CWeaponAlyxGun::CWeaponAlyxGun( )
 {
 	m_fMinRange1		= 1;
 	m_fMaxRange1		= 5000;
-
 	m_flTooCloseTimer	= TOOCLOSETIMER_OFF;
-
 #ifdef HL2_EPISODIC
 	m_fMinRange1		= 60;
 	m_fMaxRange1		= 2048;
 #endif//HL2_EPISODIC
 }
 
-CWeaponAlyxGun::~CWeaponAlyxGun( )
-{
-}
+CWeaponAlyxGun::~CWeaponAlyxGun(){}
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CWeaponAlyxGun::Precache( void )
 {
 	BaseClass::Precache();
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CWeaponAlyxGun::Equip( CBaseCombatCharacter *pOwner )
 {
 	BaseClass::Equip( pOwner );
@@ -163,14 +140,10 @@ void CWeaponAlyxGun::Equip( CBaseCombatCharacter *pOwner )
 //-----------------------------------------------------------------------------
 // Purpose: Try to encourage Alyx not to use her weapon at point blank range,
 //			but don't prevent her from defending herself if cornered.
-// Input  : flDot - 
-//			flDist - 
-// Output : int
 //-----------------------------------------------------------------------------
 int CWeaponAlyxGun::WeaponRangeAttack1Condition( float flDot, float flDist )
 {
 #ifdef HL2_EPISODIC
-	
 	if( flDist < m_fMinRange1 )
 	{
 		// If Alyx is not able to fire because an enemy is too close, start a timer.
@@ -214,29 +187,18 @@ int CWeaponAlyxGun::WeaponRangeAttack1Condition( float flDot, float flDist )
 			nBaseCondition = COND_CAN_RANGE_ATTACK1;
 		}
 	}
-
 	return nBaseCondition;
-
 #else 
-
 	return BaseClass::WeaponRangeAttack1Condition( flDot, flDist );
-
 #endif//HL2_EPISODIC
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : flDot - 
-//			flDist - 
-// Output : int
-//-----------------------------------------------------------------------------
 int CWeaponAlyxGun::WeaponRangeAttack2Condition( float flDot, float flDist )
 {
 	return COND_NONE;
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
 // Input  : *pOperator - 
 //-----------------------------------------------------------------------------
 void CWeaponAlyxGun::FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, bool bUseWeaponAngles )
@@ -256,38 +218,19 @@ void CWeaponAlyxGun::FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, bool
 		vecShootOrigin = pOperator->Weapon_ShootPosition();
  		vecShootDir = npc->GetActualShootTrajectory( vecShootOrigin );
 	}
-
 	WeaponSound( SINGLE_NPC );
 
-	if( hl2_episodic.GetBool() )
-	{
-		pOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 1 );
-	}
-	else
-	{
-		pOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 2 );
-	}
-
+	pOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 1 );
 	pOperator->DoMuzzleFlash();
 
-	if( hl2_episodic.GetBool() )
-	{
-		// Never fire Alyx's last bullet just in case there's an emergency
-		// and she needs to be able to shoot without reloading.
-		if( m_iClip1 > 1 )
-		{
-			m_iClip1 = m_iClip1 - 1;
-		}
-	}
-	else
+	// Never fire Alyx's last bullet just in case there's an emergency
+	// and she needs to be able to shoot without reloading.
+	if( m_iClip1 > 1 )
 	{
 		m_iClip1 = m_iClip1 - 1;
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CWeaponAlyxGun::Operator_ForceNPCFire( CBaseCombatCharacter *pOperator, bool bSecondary )
 {
 	// Ensure we have enough rounds in the clip
@@ -298,11 +241,9 @@ void CWeaponAlyxGun::Operator_ForceNPCFire( CBaseCombatCharacter *pOperator, boo
 	{
 		SetActivity( ACT_RANGE_ATTACK_PISTOL, 0.0f );
 	}
-
 	FireNPCPrimaryAttack( pOperator, true );
 }
 
-//-----------------------------------------------------------------------------
 void CWeaponAlyxGun::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator )
 {
 	switch( pEvent->event )
@@ -312,7 +253,6 @@ void CWeaponAlyxGun::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatC
 			FireNPCPrimaryAttack( pOperator, false );
 			break;
 		}
-		
 		default:
 			BaseClass::Operator_HandleAnimEvent( pEvent, pOperator );
 			break;
@@ -324,13 +264,9 @@ void CWeaponAlyxGun::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatC
 //-----------------------------------------------------------------------------
 bool IsAlyxInInjuredMode( void )
 {
-	if ( hl2_episodic.GetBool() == false )
-		return false;
-
 	return ( GlobalEntity_GetState("ep2_alyx_injured") == GLOBAL_ON );
 }
 
-//-----------------------------------------------------------------------------
 const Vector& CWeaponAlyxGun::GetBulletSpread( void )
 {
 	static const Vector cone = VECTOR_CONE_2DEGREES;
@@ -338,24 +274,19 @@ const Vector& CWeaponAlyxGun::GetBulletSpread( void )
 
 	if ( IsAlyxInInjuredMode() )
 		return injuredCone;
-
 	return cone;
 }
 
-//-----------------------------------------------------------------------------
 float CWeaponAlyxGun::GetMinRestTime( void )
 {
 	if ( IsAlyxInInjuredMode() )
 		return 1.5f;
-
 	return BaseClass::GetMinRestTime();
 }
 
-//-----------------------------------------------------------------------------
 float CWeaponAlyxGun::GetMaxRestTime( void )
 {
 	if ( IsAlyxInInjuredMode() )
 		return 3.0f;
-
 	return BaseClass::GetMaxRestTime();
 }

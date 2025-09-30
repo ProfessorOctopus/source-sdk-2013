@@ -1,9 +1,4 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose: 
-//
-//=============================================================================//
-
 #include "cbase.h"
 #include "soundenvelope.h"
 #include "Sprite.h"
@@ -49,14 +44,10 @@ char *pszMineStateNames[] =
 	"Launched",
 };
 
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+#include "tier0/memdbgon.h" // memdbgon must be the last include file in a .cpp file!!!
 
-// After this many flips, seriously cut the frequency with which you try.
-#define BOUNCEBOMB_MAX_FLIPS	5
-
-// Approximate radius of the bomb's model
-#define BOUNCEBOMB_RADIUS		24
+#define BOUNCEBOMB_MAX_FLIPS	5 // After this many flips, seriously cut the frequency with which you try.
+#define BOUNCEBOMB_RADIUS		24 // Approximate radius of the bomb's model
 
 #ifdef MAPBASE
 ConVar combine_mine_trace_dist( "combine_mine_trace_dist", "1024" );
@@ -70,23 +61,18 @@ BEGIN_DATADESC( CBounceBomb )
 	DEFINE_THINKFUNC( SettleThink ),
 	DEFINE_THINKFUNC( CaptiveThink ),
 	DEFINE_THINKFUNC( CavernBounceThink ),
-
 	DEFINE_SOUNDPATCH( m_pWarnSound ),
-
 	DEFINE_KEYFIELD( m_flExplosionDelay,	FIELD_FLOAT, "ExplosionDelay" ),
 	DEFINE_KEYFIELD( m_bBounce,			FIELD_BOOLEAN, "Bounce" ),
-
 	DEFINE_FIELD( m_bAwake, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_hNearestNPC, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_hSprite, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_LastSpriteColor, FIELD_COLOR32 ),
-
 	DEFINE_FIELD( m_flHookPositions, FIELD_FLOAT ),
 	DEFINE_FIELD( m_iHookN, FIELD_INTEGER ),
 	DEFINE_FIELD( m_iHookE, FIELD_INTEGER ),
 	DEFINE_FIELD( m_iHookS, FIELD_INTEGER ),
 	DEFINE_FIELD( m_iAllHooks, FIELD_INTEGER ),
-
 	DEFINE_KEYFIELD( m_bLockSilently, FIELD_BOOLEAN, "LockSilently" ),
 	DEFINE_FIELD( m_bFoeNearest, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_flIgnoreWorldTime, FIELD_TIME ),
@@ -1199,7 +1185,6 @@ void CBounceBomb::SearchThink()
 		{
 			Wake( false );
 		}
-
 		return;
 	}
 
@@ -1221,8 +1206,6 @@ void CBounceBomb::SearchThink()
 	}
 }
 
-//---------------------------------------------------------
-//---------------------------------------------------------
 void CBounceBomb::ExplodeTouch( CBaseEntity *pOther )
 {
 	// Don't touch anything if held by physgun.
@@ -1236,18 +1219,12 @@ void CBounceBomb::ExplodeTouch( CBaseEntity *pOther )
 	// Don't touch gibs and other debris
 	if( pOther->GetCollisionGroup() == COLLISION_GROUP_DEBRIS )
 	{
-		if( hl2_episodic.GetBool() )
+		Vector vecVelocity;
+		VPhysicsGetObject()->GetVelocity( &vecVelocity, NULL );
+		if( vecVelocity == vec3_origin )
 		{
-			Vector vecVelocity;
-
-			VPhysicsGetObject()->GetVelocity( &vecVelocity, NULL );
-
-			if( vecVelocity == vec3_origin )
-			{
-				ExplodeThink();
-			}
+			ExplodeThink();
 		}
-
 		return;
 	}
 

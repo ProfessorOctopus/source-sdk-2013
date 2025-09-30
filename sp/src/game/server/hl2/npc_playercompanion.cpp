@@ -1,13 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose:
-//
-//=============================================================================//
-
 #include "cbase.h"
-
 #include "npc_playercompanion.h"
-
 #include "combine_mine.h"
 #include "fire.h"
 #include "func_tank.h"
@@ -15,7 +8,6 @@
 #include "npcevent.h"
 #include "props.h"
 #include "BasePropDoor.h"
-
 #include "ai_hint.h"
 #include "ai_localnavigator.h"
 #include "ai_memory.h"
@@ -76,28 +68,10 @@ ConVar ai_allow_new_weapons( "ai_allow_new_weapons", "1", FCVAR_NONE, "Allows co
 #define COMPANION_AIMTARGET_NEAREST		24.0f
 #define COMPANION_AIMTARGET_NEAREST_SQR	576.0f
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
 BEGIN_DATADESC( CNPC_PlayerCompanion )
-
 	DEFINE_FIELD( 	m_bMovingAwayFromPlayer, 	FIELD_BOOLEAN ),
 	DEFINE_EMBEDDED( m_SpeechWatch_PlayerLooking ),
 	DEFINE_EMBEDDED( m_FakeOutMortarTimer ),
-
-// (recomputed)
-//						m_bWeightPathsInCover	
-
-// These are auto-saved by AI
-//	DEFINE_FIELD( m_AssaultBehavior,	CAI_AssaultBehavior ),
-//	DEFINE_FIELD( m_FollowBehavior,		CAI_FollowBehavior ),
-//	DEFINE_FIELD( m_StandoffBehavior,	CAI_StandoffBehavior ),
-//	DEFINE_FIELD( m_LeadBehavior,		CAI_LeadBehavior ),
-//  DEFINE_FIELD( m_OperatorBehavior,	FIELD_EMBEDDED ),
-//					m_ActBusyBehavior
-//					m_PassengerBehavior
-//					m_FearBehavior
-
 	DEFINE_INPUTFUNC( FIELD_VOID,	"OutsideTransition",	InputOutsideTransition ),
 	DEFINE_INPUTFUNC( FIELD_VOID,	"SetReadinessPanic",	InputSetReadinessPanic ),
 	DEFINE_INPUTFUNC( FIELD_VOID,	"SetReadinessStealth",	InputSetReadinessStealth ),
@@ -105,22 +79,16 @@ BEGIN_DATADESC( CNPC_PlayerCompanion )
 	DEFINE_INPUTFUNC( FIELD_VOID,	"SetReadinessMedium",	InputSetReadinessMedium ),
 	DEFINE_INPUTFUNC( FIELD_VOID,	"SetReadinessHigh",		InputSetReadinessHigh ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT,	"LockReadiness",		InputLockReadiness ),
-
-//------------------------------------------------------------------------------
 #ifdef HL2_EPISODIC
 	DEFINE_FIELD( m_hFlare, FIELD_EHANDLE ),
-
 	DEFINE_INPUTFUNC( FIELD_STRING,	"EnterVehicle",				InputEnterVehicle ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "EnterVehicleImmediately",	InputEnterVehicleImmediately ),
 	DEFINE_INPUTFUNC( FIELD_VOID,	"ExitVehicle",				InputExitVehicle ),
 	DEFINE_INPUTFUNC( FIELD_VOID,	"CancelEnterVehicle",		InputCancelEnterVehicle ),
 #endif	// HL2_EPISODIC
-//------------------------------------------------------------------------------
-
 #ifndef MAPBASE
 	DEFINE_INPUTFUNC( FIELD_STRING, "GiveWeapon",			InputGiveWeapon ),
 #endif
-
 	DEFINE_FIELD( m_flReadiness,			FIELD_FLOAT ),
 	DEFINE_FIELD( m_flReadinessSensitivity,	FIELD_FLOAT ),
 	DEFINE_FIELD( m_bReadinessCapable,		FIELD_BOOLEAN ),
@@ -129,27 +97,17 @@ BEGIN_DATADESC( CNPC_PlayerCompanion )
 	DEFINE_FIELD( m_iNumConsecutiveBarrelsExploded, FIELD_INTEGER ),
 	DEFINE_FIELD( m_fLastPlayerKill, FIELD_TIME ),
 	DEFINE_FIELD( m_iNumConsecutivePlayerKills, FIELD_INTEGER ),
-
-	//					m_flBoostSpeed (recomputed)
-
 	DEFINE_EMBEDDED( m_AnnounceAttackTimer ),
-
 	DEFINE_FIELD( m_hAimTarget,				FIELD_EHANDLE ),
-
 	DEFINE_KEYFIELD( m_bAlwaysTransition, FIELD_BOOLEAN, "AlwaysTransition" ),
 	DEFINE_KEYFIELD( m_bDontPickupWeapons, FIELD_BOOLEAN, "DontPickupWeapons" ),
-
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnableAlwaysTransition", InputEnableAlwaysTransition ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableAlwaysTransition", InputDisableAlwaysTransition ),
-
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnableWeaponPickup", InputEnableWeaponPickup ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableWeaponPickup", InputDisableWeaponPickup ),
-
-
 #if HL2_EPISODIC
 	DEFINE_INPUTFUNC( FIELD_VOID, "ClearAllOutputs", InputClearAllOuputs ),
 #endif
-
 	DEFINE_OUTPUT( m_OnWeaponPickup, "OnWeaponPickup" ),
 
 #ifdef MAPBASE
@@ -163,9 +121,6 @@ BEGIN_DATADESC( CNPC_PlayerCompanion )
 #endif
 
 END_DATADESC()
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 
 CNPC_PlayerCompanion::eCoverType CNPC_PlayerCompanion::gm_fCoverSearchType;
 bool CNPC_PlayerCompanion::gm_bFindingCoverFromAllEnemies;
@@ -184,9 +139,6 @@ string_t CNPC_PlayerCompanion::gm_iszAR2Classname;
 #endif
 #endif
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
 CNPC_PlayerCompanion::CNPC_PlayerCompanion()
 {
 #ifdef MAPBASE
@@ -194,11 +146,8 @@ CNPC_PlayerCompanion::CNPC_PlayerCompanion()
 	{
 		m_iGrenadeDropCapabilities = (eGrenadeDropCapabilities)(GRENDROPCAP_GRENADE | GRENDROPCAP_ALTFIRE | GRENDROPCAP_INTERRUPTED);
 	}
-#endif
+#endif // MAPBASE
 }
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 
 bool CNPC_PlayerCompanion::CreateBehaviors()
 {
@@ -385,11 +334,6 @@ Disposition_t CNPC_PlayerCompanion::IRelationType( CBaseEntity *pTarget )
 			// is active... that is, not classifying itself as CLASS_NONE
 			if( pTarget->Classify() != CLASS_NONE )
 			{
-				if( !hl2_episodic.GetBool() && IsSafeFromFloorTurret(GetAbsOrigin(), pTarget) )
-				{
-					return D_NU;
-				}
-
 				return D_FR;
 			}
 		}
@@ -452,15 +396,8 @@ void CNPC_PlayerCompanion::GatherConditions()
 			{
 				if ( HasCondition( COND_SEE_PLAYER ) && (GetAbsOrigin() - pPlayer->GetAbsOrigin()).LengthSqr() < Square(25 * 12) )
 				{
-					if ( hl2_episodic.GetBool() )
-					{
-						// Don't stomp our squad if we're in one
-						if ( GetSquad() == NULL )
-						{
-							AddToSquad( GetPlayerSquadName() );
-						}
-					}
-					else
+					// Don't stomp our squad if we're in one
+					if ( GetSquad() == NULL )
 					{
 						AddToSquad( GetPlayerSquadName() );
 					}
@@ -590,7 +527,7 @@ void CNPC_PlayerCompanion::GatherConditions()
 	}
 #endif
 
-	if ( AI_IsSinglePlayer() && hl2_episodic.GetBool() && !GetEnemy() && HasCondition( COND_HEAR_PLAYER ) )
+	if ( AI_IsSinglePlayer() && !GetEnemy() && HasCondition( COND_HEAR_PLAYER ) )
 	{
 		Vector los = ( UTIL_GetLocalPlayer()->EyePosition() - EyePosition() );
 		los.z = 0;
@@ -603,9 +540,6 @@ void CNPC_PlayerCompanion::GatherConditions()
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::DoCustomSpeechAI( void )
 {
 	CBasePlayer *pPlayer = AI_GetSinglePlayer();
@@ -1067,14 +1001,11 @@ int CNPC_PlayerCompanion::SelectSchedulePlayerPush()
 //-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::IgnorePlayerPushing( void )
 {
-	if ( hl2_episodic.GetBool() )
-	{
-		// Ignore player pushes if we're leading him
-		if ( m_LeadBehavior.IsRunning() && m_LeadBehavior.HasGoal() )
-			return true;
-		if ( m_AssaultBehavior.IsRunning() && m_AssaultBehavior.OnStrictAssault() )
-			return true;
-	}
+	// Ignore player pushes if we're leading him
+	if ( m_LeadBehavior.IsRunning() && m_LeadBehavior.HasGoal() )
+		return true;
+	if ( m_AssaultBehavior.IsRunning() && m_AssaultBehavior.OnStrictAssault() )
+		return true;
 
 	return false;
 }
@@ -1158,19 +1089,15 @@ bool CNPC_PlayerCompanion::ShouldDeferToFollowBehavior()
 	// Even though assault and act busy are placed ahead of the follow behavior in precedence, the below
 	// code is necessary because we call ShouldDeferToFollowBehavior BEFORE we call the generic
 	// BehaviorSelectSchedule, which tries the behaviors in priority order.
-	if ( m_AssaultBehavior.CanSelectSchedule() && hl2_episodic.GetBool() )
+	if ( m_AssaultBehavior.CanSelectSchedule())
 	{
 		return false;
 	}
 
-	if ( hl2_episodic.GetBool() )
+	if ( m_ActBusyBehavior.CanSelectSchedule() && m_ActBusyBehavior.IsCombatActBusy() )
 	{
-		if ( m_ActBusyBehavior.CanSelectSchedule() && m_ActBusyBehavior.IsCombatActBusy() )
-		{
-			return false;
-		}
+		return false;
 	}
-	
 	return true;
 }
 
@@ -2354,7 +2281,7 @@ bool CNPC_PlayerCompanion::PickTacticalLookTarget( AILookTargetArgs_t *pArgs )
 	flMaxLookTime = flMinLookTime + random->RandomFloat( 0.0f, 0.5f );
 	pArgs->flDuration = random->RandomFloat( flMinLookTime, flMaxLookTime );
 
-	if( HasCondition(COND_SEE_PLAYER) && hl2_episodic.GetBool() )
+	if( HasCondition(COND_SEE_PLAYER))
 	{
 		// 1/3rd chance to authoritatively look at player
 		if( random->RandomInt( 0, 2 ) == 0 )
@@ -2727,40 +2654,22 @@ void CNPC_PlayerCompanion::OnUpdateShotRegulator()
 	{
 		if( GetAbsOrigin().DistTo( GetEnemy()->GetAbsOrigin() ) <= PC_LARGER_BURST_RANGE )
 		{
-			if( hl2_episodic.GetBool() )
-			{
-				// Longer burst
-				int longBurst = random->RandomInt( 10, 15 );
-				GetShotRegulator()->SetBurstShotsRemaining( longBurst );
-				GetShotRegulator()->SetRestInterval( 0.1, 0.2 );
-			}
-			else
-			{
-				// Longer burst
-				GetShotRegulator()->SetBurstShotsRemaining( GetShotRegulator()->GetBurstShotsRemaining() * 2 );
-
-				// Shorter Rest interval
-				float flMinInterval, flMaxInterval;
-				GetShotRegulator()->GetRestInterval( &flMinInterval, &flMaxInterval );
-				GetShotRegulator()->SetRestInterval( flMinInterval * 0.6f, flMaxInterval * 0.6f );
-			}
+			// Longer burst
+			int longBurst = random->RandomInt( 10, 15 );
+			GetShotRegulator()->SetBurstShotsRemaining( longBurst );
+			GetShotRegulator()->SetRestInterval( 0.1, 0.2 );
 		}
 	}
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 void CNPC_PlayerCompanion::DecalTrace( trace_t *pTrace, char const *decalName )
 {
 	// Do not decal a player companion's head or face, no matter what.
 	if( pTrace->hitgroup == HITGROUP_HEAD )
 		return;
-
 	BaseClass::DecalTrace( pTrace, decalName );
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::FCanCheckAttacks()
 {
 	if( GetEnemy() && ( IsSniper(GetEnemy()) || IsMortar(GetEnemy()) || IsTurret(GetEnemy()) ) )
@@ -2768,7 +2677,6 @@ bool CNPC_PlayerCompanion::FCanCheckAttacks()
 		// Don't attack the sniper or the mortar.
 		return false;
 	}
-
 	return BaseClass::FCanCheckAttacks();
 }
 

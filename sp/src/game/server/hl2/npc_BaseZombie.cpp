@@ -1,20 +1,13 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
 // Purpose: Implements the zombie, a horrific once-human headcrab victim.
-//
 // The zombie has two main states: Full and Torso.
-//
 // In Full state, the zombie is whole and walks upright as he did in Half-Life.
 // He will try to claw the player and swat physics items at him. 
-//
 // In Torso state, the zombie has been blasted or cut in half, and the Torso will
 // drag itself along the ground with its arms. It will try to claw the player.
-//
 // In either state, a severely injured Zombie will release its headcrab, which
 // will immediately go after the player. The Zombie will then die (ragdoll). 
-//
 //=============================================================================//
-
 #include "cbase.h"
 #include "npc_BaseZombie.h"
 #include "player.h"
@@ -47,9 +40,7 @@
 #include "weapon_physcannon.h"
 #include "ammodef.h"
 #include "vehicle_base.h"
- 
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+#include "tier0/memdbgon.h" // memdbgon must be the last include file in a .cpp file!!!
 
 extern ConVar sk_npc_head;
 
@@ -59,27 +50,16 @@ int g_interactionZombieMeleeWarning;
 
 envelopePoint_t envDefaultZombieMoanVolumeFast[] =
 {
-	{	1.0f, 1.0f,
-		0.1f, 0.1f,
-	},
-	{	0.0f, 0.0f,
-		0.2f, 0.3f,
-	},
+	{1.0f, 1.0f, 0.1f, 0.1f,},
+	{0.0f, 0.0f, 0.2f, 0.3f,},
 };
 
 envelopePoint_t envDefaultZombieMoanVolume[] =
 {
-	{	1.0f, 0.1f,
-		0.1f, 0.1f,
-	},
-	{	1.0f, 1.0f,
-		0.2f, 0.2f,
-	},
-	{	0.0f, 0.0f,
-		0.3f, 0.4f,
-	},
+	{1.0f, 0.1f, 0.1f, 0.1f,},
+	{1.0f, 1.0f, 0.2f, 0.2f,},
+	{0.0f, 0.0f, 0.3f, 0.4f,},
 };
-
 
 // if the zombie doesn't find anything closer than this, it doesn't swat.
 #define ZOMBIE_FARTHEST_PHYSICS_OBJECT	40.0*12.0
@@ -88,45 +68,33 @@ envelopePoint_t envDefaultZombieMoanVolume[] =
 // Don't swat objects unless player is closer than this.
 #define ZOMBIE_PLAYER_MAX_SWAT_DIST		1000
 
-//
 // How much health a Zombie torso gets when a whole zombie is broken
 // It's whole zombie's MAX Health * this value
 #define ZOMBIE_TORSO_HEALTH_FACTOR 0.5
 
-//
 // When the zombie has health < m_iMaxHealth * this value, it will
 // try to release its headcrab.
 #define ZOMBIE_RELEASE_HEALTH_FACTOR	0.5
 
-//
 // The heaviest physics object that a zombie should try to swat. (kg)
 #define ZOMBIE_MAX_PHYSOBJ_MASS		60
 
-//
 // Zombie tries to get this close to a physics object's origin to swat it
 #define ZOMBIE_PHYSOBJ_SWATDIST		80
 
-//
 // Because movement code sometimes doesn't get us QUITE where we
 // want to go, the zombie tries to get this close to a physics object
 // Zombie will end up somewhere between PHYSOBJ_MOVE_TO_DIST & PHYSOBJ_SWATDIST
 #define ZOMBIE_PHYSOBJ_MOVE_TO_DIST	48
 
-//
 // How long between physics swat attacks (in seconds). 
 #define ZOMBIE_SWAT_DELAY			5
 
-
-//
 // After taking damage, ignore further damage for n seconds. This keeps the zombie
 // from being interrupted while.
-//
 #define ZOMBIE_FLINCH_DELAY			3
-
-
 #define ZOMBIE_BURN_TIME		10 // If ignited, burn for this many seconds
 #define ZOMBIE_BURN_TIME_NOISE	2  // Give or take this many seconds.
-
 
 //=========================================================
 // private activities
@@ -141,22 +109,18 @@ int CNPC_BaseZombie::ACT_ZOM_FALL;
 ConVar	sk_zombie_dmg_one_slash( "sk_zombie_dmg_one_slash","0");
 ConVar	sk_zombie_dmg_both_slash( "sk_zombie_dmg_both_slash","0");
 
-
 // When a zombie spawns, he will select a 'base' pitch value
 // that's somewhere between basepitchmin & basepitchmax
 ConVar zombie_basemin( "zombie_basemin", "100" );
 ConVar zombie_basemax( "zombie_basemax", "100" );
-
 ConVar zombie_changemin( "zombie_changemin", "0" );
 ConVar zombie_changemax( "zombie_changemax", "0" );
 
 // play a sound once in every zombie_stepfreq steps
 ConVar zombie_stepfreq( "zombie_stepfreq", "4" );
 ConVar zombie_moanfreq( "zombie_moanfreq", "1" );
-
 ConVar zombie_decaymin( "zombie_decaymin", "0.1" );
 ConVar zombie_decaymax( "zombie_decaymax", "0.4" );
-
 ConVar zombie_ambushdist( "zombie_ambushdist", "16000" );
 
 #ifdef MAPBASE
@@ -169,14 +133,10 @@ ConVar	zombie_no_flinch_during_unique_anim( "zombie_no_flinch_during_unique_anim
 //=========================================================
 static int s_iAngryZombies = 0;
 
-//=========================================================
-//=========================================================
 class CAngryZombieCounter : public CAutoGameSystem
 {
 public:
-	CAngryZombieCounter( char const *name ) : CAutoGameSystem( name )
-	{
-	}
+	CAngryZombieCounter( char const *name ) : CAutoGameSystem( name ){}
 	// Level init, shutdown
 	virtual void LevelInitPreEntity()
 	{
@@ -185,7 +145,6 @@ public:
 };
 
 CAngryZombieCounter	AngryZombieCounter( "CAngryZombieCounter" );
-
 
 int AE_ZOMBIE_ATTACK_RIGHT;
 int AE_ZOMBIE_ATTACK_LEFT;
@@ -202,9 +161,6 @@ int AE_ZOMBIE_POUND;
 int AE_ZOMBIE_ALERTSOUND;
 int AE_ZOMBIE_POPHEADCRAB;
 
-
-//=========================================================
-//=========================================================
 BEGIN_DATADESC( CNPC_BaseZombie )
 
 	DEFINE_SOUNDPATCH( m_pMoanSound ),
@@ -235,24 +191,14 @@ BEGIN_DATADESC( CNPC_BaseZombie )
 	DEFINE_OUTPUT( m_OnSwattedProp, "OnSwattedProp" ),
 	DEFINE_OUTPUT( m_OnCrab, "OnCrab" ),
 #endif
-
 END_DATADESC()
 
-
-//LINK_ENTITY_TO_CLASS( base_zombie, CNPC_BaseZombie );
-
-//---------------------------------------------------------
-//---------------------------------------------------------
 int CNPC_BaseZombie::g_numZombies = 0;
 
-
-//---------------------------------------------------------
-//---------------------------------------------------------
 CNPC_BaseZombie::CNPC_BaseZombie()
 {
 	// Gotta select which sound we're going to play, right here!
 	// Because everyone's constructed before they spawn.
-	//
 	// Assign moan sounds in order, over and over.
 	// This means if 3 or so zombies spawn near each
 	// other, they will definitely not pick the same
@@ -264,18 +210,13 @@ CNPC_BaseZombie::CNPC_BaseZombie()
 	m_flMaxDistToSwat = ZOMBIE_PLAYER_MAX_SWAT_DIST;
 	m_iMaxObjMassToSwat = ZOMBIE_MAX_PHYSOBJ_MASS;
 #endif
-
 	g_numZombies++;
 }
 
-
-//---------------------------------------------------------
-//---------------------------------------------------------
 CNPC_BaseZombie::~CNPC_BaseZombie()
 {
 	g_numZombies--;
 }
-
 
 //---------------------------------------------------------
 // The closest physics object is chosen that is:
@@ -347,7 +288,6 @@ bool CNPC_BaseZombie::FindNearestPhysicsObject( int iMaxMass )
 			}
 			return ITERATION_CONTINUE;
 		}
-
 		int m_iMaxMass;
 	};
 
@@ -402,16 +342,13 @@ bool CNPC_BaseZombie::FindNearestPhysicsObject( int iMaxMass )
 		if ( !FVisible( pList[i] ) )
 			continue;
 
-		if ( hl2_episodic.GetBool() )
-		{
-			// Skip things that the enemy can't see. Do we want this as a general thing? 
-			// The case for this feature is that zombies who are pursuing the player will
-			// stop along the way to swat objects at the player who is around the corner or 
-			// otherwise not in a place that the object has a hope of hitting. This diversion
-			// makes the zombies very late (in a random fashion) getting where they are going. (sjb 1/2/06)
-			if( !GetEnemy()->FVisible( pList[i] ) )
-				continue;
-		}
+		// Skip things that the enemy can't see. Do we want this as a general thing? 
+		// The case for this feature is that zombies who are pursuing the player will
+		// stop along the way to swat objects at the player who is around the corner or 
+		// otherwise not in a place that the object has a hope of hitting. This diversion
+		// makes the zombies very late (in a random fashion) getting where they are going. (sjb 1/2/06)
+		if( !GetEnemy()->FVisible( pList[i] ) )
+			continue;
 
 		// Make this the last check, since it makes a string.
 		// Don't swat server ragdolls!
@@ -449,8 +386,6 @@ Class_T	CNPC_BaseZombie::Classify( void )
 	return( CLASS_ZOMBIE ); 
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 Disposition_t CNPC_BaseZombie::IRelationType( CBaseEntity *pTarget )
 {
 	// Slumping should not affect Zombie's opinion of others
@@ -461,7 +396,6 @@ Disposition_t CNPC_BaseZombie::IRelationType( CBaseEntity *pTarget )
 		m_bIsSlumped = true;
 		return result;
 	}
-
 	return BaseClass::IRelationType( pTarget );
 }
 
@@ -505,10 +439,8 @@ float CNPC_BaseZombie::MaxYawSpeed( void )
 	}
 }
 
-
 //-----------------------------------------------------------------------------
 // Purpose: turn in the direction of movement
-// Output :
 //-----------------------------------------------------------------------------
 bool CNPC_BaseZombie::OverrideMoveFacing( const AILocalMoveGoal_t &move, float flInterval )
 {
@@ -537,8 +469,6 @@ bool CNPC_BaseZombie::OverrideMoveFacing( const AILocalMoveGoal_t &move, float f
 			{
 				idealYaw = flMoveYaw + UTIL_AngleDiff( flEYaw, flMoveYaw ) * (2 - flEDist / 128.0);
 			}
-
-			//DevMsg("was %.0f now %.0f\n", flMoveYaw, idealYaw );
 		}
 	}
 
@@ -554,8 +484,6 @@ bool CNPC_BaseZombie::OverrideMoveFacing( const AILocalMoveGoal_t &move, float f
 
 //-----------------------------------------------------------------------------
 // Purpose: For innate melee attack
-// Input  :
-// Output :
 //-----------------------------------------------------------------------------
 int CNPC_BaseZombie::MeleeAttack1Conditions ( float flDot, float flDist )
 {
@@ -615,13 +543,10 @@ int CNPC_BaseZombie::MeleeAttack1Conditions ( float flDot, float flDist )
 
 	if( tr.fraction == 1.0 || !tr.m_pEnt )
 	{
-
 #ifdef HL2_EPISODIC
-
 		// If our trace was unobstructed but we were shooting 
 		if ( GetEnemy() && GetEnemy()->Classify() == CLASS_BULLSEYE )
 			return COND_CAN_MELEE_ATTACK1;
-
 #endif // HL2_EPISODIC
 
 		// This attack would miss completely. Trick the zombie into moving around some more.
@@ -663,7 +588,6 @@ int CNPC_BaseZombie::MeleeAttack1Conditions ( float flDot, float flDist )
 	}
 
 #ifdef HL2_EPISODIC
-
 	if ( !tr.m_pEnt->IsWorld() && GetEnemy() && GetEnemy()->GetGroundEntity() == tr.m_pEnt )
 	{
 		//Try to swat whatever the player is standing on instead of acting like a dill.
@@ -673,15 +597,12 @@ int CNPC_BaseZombie::MeleeAttack1Conditions ( float flDot, float flDist )
 	// Bullseyes are given some grace on if they can be hit
 	if ( GetEnemy() && GetEnemy()->Classify() == CLASS_BULLSEYE )
 		return COND_CAN_MELEE_ATTACK1;
-
 #endif // HL2_EPISODIC
 
 	// Move around some more
 	return COND_TOO_FAR_TO_ATTACK;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 #define ZOMBIE_BUCKSHOT_TRIPLE_DAMAGE_DIST	96.0f // Triple damage from buckshot at 8 feet (headshot only)
 float CNPC_BaseZombie::GetHitgroupDamageMultiplier( int iHitGroup, const CTakeDamageInfo &info )
 {
@@ -709,13 +630,9 @@ float CNPC_BaseZombie::GetHitgroupDamageMultiplier( int iHitGroup, const CTakeDa
 			}
 		}
 	}
-
 	return BaseClass::GetHitgroupDamageMultiplier( iHitGroup, info );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CNPC_BaseZombie::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	CTakeDamageInfo infoCopy = info;
@@ -771,12 +688,9 @@ bool CNPC_BaseZombie::ShouldBecomeTorso( const CTakeDamageInfo &info, float flDa
 		return true;
 	}
 
-	if ( hl2_episodic.GetBool() )
-	{
-		// Always split after a cannon hit
-		if ( info.GetAmmoType() == GetAmmoDef()->Index("CombineHeavyCannon") )
-			return true;
-	}
+	// Always split after a cannon hit
+	if ( info.GetAmmoType() == GetAmmoDef()->Index("CombineHeavyCannon") )
+		return true;
 
 #if 0
 	if( info.GetDamageType() & DMG_BUCKSHOT )
@@ -787,10 +701,8 @@ bool CNPC_BaseZombie::ShouldBecomeTorso( const CTakeDamageInfo &info, float flDa
 		}
 	}
 #endif 
-	
 	return false;
 }
-
 
 //-----------------------------------------------------------------------------
 // Purpose: A zombie has taken damage. Determine whether he release his headcrab.
@@ -954,13 +866,10 @@ int CNPC_BaseZombie::OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo )
 				}
 
 				// For Combine cannon impacts
-				if ( hl2_episodic.GetBool() )
+				if ( bHitByCombineCannon )
 				{
-					if ( bHitByCombineCannon )
-					{
-						// Catch on fire.
-						Ignite( 5.0f + random->RandomFloat( 0.0f, 5.0f ) );
-					}
+					// Catch on fire.
+					Ignite( 5.0f + random->RandomFloat( 0.0f, 5.0f ) );
 				}
 
 				if (flDamageThreshold >= 1.0)
@@ -1822,7 +1731,6 @@ void CNPC_BaseZombie::Spawn( void )
 	m_ActBusyBehavior.SetUseRenderBounds(true);
 }
 
-
 //-----------------------------------------------------------------------------
 // Purpose: Pecaches all resources this NPC needs.
 //-----------------------------------------------------------------------------
@@ -1842,13 +1750,11 @@ void CNPC_BaseZombie::Precache( void )
 	BaseClass::Precache();
 }
 
-//---------------------------------------------------------
-//---------------------------------------------------------
 void CNPC_BaseZombie::StartTouch( CBaseEntity *pOther )
 {
 	BaseClass::StartTouch( pOther );
 
-	if( IsSlumped() && hl2_episodic.GetBool() )
+	if(IsSlumped())
 	{
 		if( FClassnameIs( pOther, "prop_physics" ) )
 		{
@@ -1858,8 +1764,6 @@ void CNPC_BaseZombie::StartTouch( CBaseEntity *pOther )
 	}
 }
 
-//---------------------------------------------------------
-//---------------------------------------------------------
 bool CNPC_BaseZombie::CreateBehaviors()
 {
 	AddBehavior( &m_ActBusyBehavior );
@@ -1867,8 +1771,6 @@ bool CNPC_BaseZombie::CreateBehaviors()
 	return BaseClass::CreateBehaviors();
 }
 
-//---------------------------------------------------------
-//---------------------------------------------------------
 int CNPC_BaseZombie::TranslateSchedule( int scheduleType )
 {
 	switch( scheduleType )
@@ -1899,10 +1801,8 @@ int CNPC_BaseZombie::TranslateSchedule( int scheduleType )
 	case SCHED_MELEE_ATTACK1:
 		return SCHED_ZOMBIE_MELEE_ATTACK1;
 	}
-
 	return BaseClass::TranslateSchedule( scheduleType );
 }
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Allows for modification of the interrupt mask for the current schedule.
@@ -2068,28 +1968,13 @@ int CNPC_BaseZombie::SelectSchedule ( void )
 //---------------------------------------------------------
 bool CNPC_BaseZombie::IsSlumped( void )
 {
-	if( hl2_episodic.GetBool() )
+	if( m_ActBusyBehavior.IsInsideActBusy() && !m_ActBusyBehavior.IsStopBusying() )
 	{
-		if( m_ActBusyBehavior.IsInsideActBusy() && !m_ActBusyBehavior.IsStopBusying() )
-		{
-			return true;
-		}
+		return true;
 	}
-	else
-	{
-		int sequence = GetSequence();
-		if ( sequence != -1 )
-		{
-			return ( strncmp( GetSequenceName( sequence ), "slump", 5 ) == 0 );
-		}
-	}
-
 	return false;
 }
 
-
-//---------------------------------------------------------
-//---------------------------------------------------------
 bool CNPC_BaseZombie::IsGettingUp( void )
 {
 	if( m_ActBusyBehavior.IsActive() && m_ActBusyBehavior.IsStopBusying() )
@@ -2099,9 +1984,6 @@ bool CNPC_BaseZombie::IsGettingUp( void )
 	return false;
 }
 
-
-//---------------------------------------------------------
-//---------------------------------------------------------
 int CNPC_BaseZombie::GetSwatActivity( void )
 {
 	// Hafta figure out whether to swat with left or right arm.
@@ -2151,9 +2033,6 @@ int CNPC_BaseZombie::GetSwatActivity( void )
 	}
 }
 
-
-//---------------------------------------------------------
-//---------------------------------------------------------
 void CNPC_BaseZombie::GatherConditions( void )
 {
 	ClearCondition( COND_ZOMBIE_LOCAL_MELEE_OBSTRUCTION );
@@ -2186,8 +2065,6 @@ void CNPC_BaseZombie::GatherConditions( void )
 	}
 }
 
-//---------------------------------------------------------
-//---------------------------------------------------------
 void CNPC_BaseZombie::PrescheduleThink( void )
 {
 	BaseClass::PrescheduleThink();

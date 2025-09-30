@@ -1022,7 +1022,7 @@ void CNPC_Citizen::GatherConditions()
 {
 	BaseClass::GatherConditions();
 
-	if( IsInPlayerSquad() && hl2_episodic.GetBool() )
+	if( IsInPlayerSquad())
 	{
 		// Leave the player squad if someone has made me neutral to player.
 		if( IRelationType(UTIL_GetLocalPlayer()) == D_NU )
@@ -3779,12 +3779,9 @@ bool CNPC_Citizen::HandleInteraction(int interactionType, void *data, CBaseComba
 		}
 		return true;
 	}
-
 	return BaseClass::HandleInteraction( interactionType, data, sourceEnt );
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_Citizen::FValidateHintType( CAI_Hint *pHint )
 {
 	switch( pHint->HintType() )
@@ -3796,23 +3793,17 @@ bool CNPC_Citizen::FValidateHintType( CAI_Hint *pHint )
 	default:
 		break;
 	}
-
 	return BaseClass::FValidateHintType( pHint );
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_Citizen::CanHeal()
 { 
 	if ( !IsMedic() && !IsAmmoResupplier() )
 		return false;
 
-	if( !hl2_episodic.GetBool() )
-	{
-		// If I'm not armed, my priority should be to arm myself.
-		if ( IsMedic() && !GetActiveWeapon() )
-			return false;
-	}
+	// If I'm not armed, my priority should be to arm myself.
+	if ( IsMedic() && !GetActiveWeapon() )
+		return false;
 
 	if ( IsInAScript() || (m_NPCState == NPC_STATE_SCRIPT) )
 		return false;

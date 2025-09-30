@@ -1176,15 +1176,12 @@ void CNPC_Vortigaunt::Precache()
 	PrecacheModel("sprites/vortring1.vmt");
 
 	// HACK: Only precache this for EP2 because reslists cannot be rebuilt - 08/22/07 - jdw
-	if ( hl2_episodic.GetBool() )
+	char modDir[MAX_PATH];
+	if ( UTIL_GetModDir( modDir, sizeof(modDir) ) )
 	{
-		char modDir[MAX_PATH];
-		if ( UTIL_GetModDir( modDir, sizeof(modDir) ) )
+		if ( !Q_stricmp( modDir, "ep2" ) )
 		{
-			if ( !Q_stricmp( modDir, "ep2" ) )
-			{
-				PrecacheMaterial( "effects/rollerglow" );
-			}
+			PrecacheMaterial( "effects/rollerglow" );
 		}
 	}
 

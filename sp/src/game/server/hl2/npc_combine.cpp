@@ -3811,14 +3811,7 @@ WeaponProficiency_t CNPC_Combine::CalcWeaponProficiency( CBaseCombatWeapon *pWea
 	if( FClassnameIs( pWeapon, "weapon_ar2" ) )
 #endif
 	{
-		if( hl2_episodic.GetBool() )
-		{
-			return WEAPON_PROFICIENCY_VERY_GOOD;
-		}
-		else
-		{
-			return WEAPON_PROFICIENCY_GOOD;
-		}
+		return WEAPON_PROFICIENCY_VERY_GOOD;
 	}
 #ifdef MAPBASE
 	else if( pWeapon->ClassMatches( gm_isz_class_Shotgun ) )

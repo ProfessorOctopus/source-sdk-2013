@@ -1,14 +1,8 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
 // Purpose: Giant walking strider thing!
-//
-// $NoKeywords: $
 //=============================================================================//
-
 #include "cbase.h"
-
 #include "npc_strider.h"
-
 #include "ai_senses.h"
 #include "ai_task.h"
 #include "ai_default.h"
@@ -58,18 +52,13 @@
 #include "npc_basescanner.h"
 #include "mapbase/GlobalStrings.h"
 #endif
-
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+#include "tier0/memdbgon.h" // memdbgon must be the last include file in a .cpp file!!!
 
 int g_interactionPlayerLaunchedRPG = 0;
 
 // Changing this classname avoids bugs where ai_relationship entities that change the
 // strider's relationship with bullseyes would affect its relationship with the focus
 LINK_ENTITY_TO_CLASS( bullseye_strider_focus, CNPC_Bullseye );
-
-
-//-----------------------------------------------------------------------------
 
 ConVar strider_immolate( "strider_immolate", "0" );
 ConVar sk_strider_health( "sk_strider_health", "350" );
@@ -84,7 +73,6 @@ ConVar strider_idle_test( "strider_idle_test", "0" );
 ConVar strider_always_use_procedural_height( "strider_always_use_procedural_height", "0" );
 ConVar strider_test_height( "strider_test_height", "0" );
 ConVar strider_pct_height_no_crouch_move( "strider_pct_height_no_crouch_move", "90" );
-
 ConVar strider_peek_time( "strider_peek_time", "0.75" );
 ConVar strider_peek_time_after_damage( "strider_peek_time_after_damage", "4.0" );
 ConVar strider_peek_eye_dist( "strider_peek_eye_dist", "1.75" );
@@ -112,21 +100,13 @@ ConVar sk_strider_num_missiles3("sk_strider_num_missiles3", "7");
 ConVar strider_missile_suppress_dist( "strider_missile_suppress_dist", "240" );
 ConVar strider_missile_suppress_time( "strider_missile_suppress_time", "3" );
 
-
-//-----------------------------------------------------------------------------
-
 float GetCurrentGravity( void );
-
 extern void CreateConcussiveBlast( const Vector &origin, const Vector &surfaceNormal, CBaseEntity *pOwner, float magnitude );
-
-//-----------------------------------------------------------------------------
 
 enum bodygroups
 {
 	STRIDER_BODYGROUP_VENT = 1,
 };
-
-//-----------------------------------------------------------------------------
 
 #define STRIDER_DEFAULT_SHOOT_DURATION			2.5 // spend this much time stitching to each target.
 #define STRIDER_SHOOT_ON_TARGET_TIME			0.5 // How much of DEFAULT_SHOOT_DURATION is spent on-target (vs. stitching up to a target)
@@ -136,7 +116,6 @@ enum bodygroups
 #define STRIDER_IGNORE_TARGET_DURATION			1.0
 #define STRIDER_IGNORE_PLAYER_DURATION			1.5
 #define STRIDER_DEFAULT_RATE_OF_FIRE			5	// Rounds per second
-
 #define STRIDER_EP1_RATE_OF_FIRE			10.0f
 #define STRIDER_EP1_SHOOT_ON_TARGET_TIME	 0.3f
 #define STRIDER_EP1_SHOOT_DURATION			 1.1f
@@ -1317,24 +1296,14 @@ void CNPC_Strider::BuildScheduleTestBits()
 		SetCustomInterruptCondition( COND_STRIDER_HAS_CANNON_TARGET );
 	}
 
-	if( IsCurSchedule( SCHED_IDLE_WALK ) || ( IsCurSchedule( SCHED_IDLE_STAND ) && hl2_episodic.GetBool() ) )
+	if(IsCurSchedule( SCHED_IDLE_WALK ) || ( IsCurSchedule( SCHED_IDLE_STAND)))
 	{
 		SetCustomInterruptCondition(COND_STRIDER_SHOULD_CROUCH);
 	}
 }
 
-//---------------------------------------------------------
-//---------------------------------------------------------
 int CNPC_Strider::SelectSchedule()
 {
-/*
-	if( GetMoveType() != MOVETYPE_FLY )
-	{
-		// Dropship just released me.
-		SetMoveType( MOVETYPE_FLY );
-		return SCHED_STRIDER_FALL_TO_GROUND;
-	}
-*/
 	if ( strider_idle_test.GetBool() )
 	{
 		m_pMinigun->Enable( this, false );
@@ -4220,8 +4189,6 @@ void CNPC_Strider::VPhysicsShadowCollision( int index, gamevcollisionevent_t *pE
 	BaseClass::VPhysicsShadowCollision( index, pEvent );
 }
 
-//---------------------------------------------------------
-//---------------------------------------------------------
 bool CNPC_Strider::TestCollision( const Ray_t &ray, unsigned int mask, trace_t& trace )
 {
 	// Let normal hitbox code handle rays
@@ -4239,13 +4206,10 @@ bool CNPC_Strider::TestCollision( const Ray_t &ray, unsigned int mask, trace_t& 
 	return false;
 }
 
-//---------------------------------------------------------
-//---------------------------------------------------------
 bool CNPC_Strider::CarriedByDropship()
 {
 	if( GetOwnerEntity() && FClassnameIs( GetOwnerEntity(), "npc_combinedropship" ) )
 		return true;
-
 	return false;
 }
 
@@ -4267,11 +4231,6 @@ void CNPC_Strider::CarriedThink()
 	}
 }
 
-
-
-
-//---------------------------------------------------------
-//---------------------------------------------------------
 Vector CNPC_Strider::LeftFootHit( float eventtime )
 {
 	Vector footPosition;
@@ -4279,65 +4238,34 @@ Vector CNPC_Strider::LeftFootHit( float eventtime )
 
 	GetAttachment( "left foot", footPosition, angles );
 
-	if ( hl2_episodic.GetBool() )
-	{
-		CPASAttenuationFilter filter( this, "NPC_Strider.FootstepEverywhere" );
-		EmitSound( filter, 0, "NPC_Strider.FootstepEverywhere", &footPosition, eventtime );
-	}
-	else
-	{
-		CPASAttenuationFilter filter( this, "NPC_Strider.Footstep" );
-		EmitSound( filter, 0, "NPC_Strider.Footstep", &footPosition, eventtime );
-	}
+	CPASAttenuationFilter filter( this, "NPC_Strider.FootstepEverywhere" );
+	EmitSound( filter, 0, "NPC_Strider.FootstepEverywhere", &footPosition, eventtime );
 
 	FootFX( footPosition );
-
 	return footPosition;
 }
 
-//---------------------------------------------------------
-//---------------------------------------------------------
 Vector CNPC_Strider::RightFootHit( float eventtime )
 {
 	Vector footPosition;
 
 	GetAttachment( "right foot", footPosition );
 	
-	if ( hl2_episodic.GetBool() )
-	{
-		CPASAttenuationFilter filter( this, "NPC_Strider.FootstepEverywhere" );
-		EmitSound( filter, 0, "NPC_Strider.FootstepEverywhere", &footPosition, eventtime );
-	}
-	else
-	{
-		CPASAttenuationFilter filter( this, "NPC_Strider.Footstep" );
-		EmitSound( filter, 0, "NPC_Strider.Footstep", &footPosition, eventtime );
-	}
+	CPASAttenuationFilter filter( this, "NPC_Strider.FootstepEverywhere" );
+	EmitSound( filter, 0, "NPC_Strider.FootstepEverywhere", &footPosition, eventtime );
 
 	FootFX( footPosition );
-
 	return footPosition;
 }
 
-
-//---------------------------------------------------------
-//---------------------------------------------------------
 Vector CNPC_Strider::BackFootHit( float eventtime )
 {
 	Vector footPosition;
 
 	GetAttachment( "back foot", footPosition );
 
-	if ( hl2_episodic.GetBool() )
-	{
-		CPASAttenuationFilter filter( this, "NPC_Strider.FootstepEverywhere" );
-		EmitSound( filter, 0, "NPC_Strider.FootstepEverywhere", &footPosition, eventtime );
-	}
-	else
-	{
-		CPASAttenuationFilter filter( this, "NPC_Strider.Footstep" );
-		EmitSound( filter, 0, "NPC_Strider.Footstep", &footPosition, eventtime );
-	}
+	CPASAttenuationFilter filter( this, "NPC_Strider.FootstepEverywhere" );
+	EmitSound( filter, 0, "NPC_Strider.FootstepEverywhere", &footPosition, eventtime );
 
 	FootFX( footPosition );
 

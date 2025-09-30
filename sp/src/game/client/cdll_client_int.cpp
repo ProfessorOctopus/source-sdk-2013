@@ -275,14 +275,14 @@ extern CViewRender g_DefaultViewRender;
 extern void StopAllRumbleEffects( void );
 
 static C_BaseEntityClassList *s_pClassLists = NULL;
+
 C_BaseEntityClassList::C_BaseEntityClassList()
 {
 	m_pNextClassList = s_pClassLists;
 	s_pClassLists = this;
 }
-C_BaseEntityClassList::~C_BaseEntityClassList()
-{
-}
+
+C_BaseEntityClassList::~C_BaseEntityClassList(){}
 
 // Any entities that want an OnDataChanged during simulation register for it here.
 class CDataChangedEvent
@@ -303,10 +303,8 @@ public:
 
 ISaveRestoreBlockHandler *GetEntitySaveRestoreBlockHandler();
 ISaveRestoreBlockHandler *GetViewEffectsRestoreBlockHandler();
-
 CUtlLinkedList<CDataChangedEvent, unsigned short> g_DataChangedEvents;
 ClientFrameStage_t g_CurFrameStage = FRAME_UNDEFINED;
-
 
 class IMoveHelper;
 
@@ -418,7 +416,6 @@ private:
 
 EXPOSE_SINGLE_INTERFACE( CClientDLLSharedAppSystems, IClientDLLSharedAppSystems, CLIENT_DLL_SHARED_APPSYSTEMS );
 
-
 //-----------------------------------------------------------------------------
 // Helper interface for voice.
 //-----------------------------------------------------------------------------
@@ -430,9 +427,7 @@ public:
 		color[0] = color[1] = color[2] = 128;
 	}
 
-	virtual void UpdateCursorState()
-	{
-	}
+	virtual void UpdateCursorState(){}
 
 	virtual bool			CanShowSpeakerLabels()
 	{
@@ -461,7 +456,6 @@ bool BoneSetupCompare( const CBoneSetupEnt &a, const CBoneSetupEnt &b )
 }
 
 CUtlRBTree<CBoneSetupEnt> g_BoneSetupEnts( BoneSetupCompare );
-
 
 void TrackBoneSetupEnt( C_BaseAnimating *pEnt )
 {
@@ -532,7 +526,6 @@ void DisplayBoneSetupEnts()
 		engine->Con_NXPrintf( &printInfo, "%25s / %3d / %3d", pEnt->m_ModelName, pEnt->m_Count, pEnt->m_Index );
 		printInfo.index++;
 	}
-
 	g_BoneSetupEnts.RemoveAll();
 #endif
 }
@@ -546,13 +539,10 @@ public:
 	CHLClient();
 
 	virtual int						Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physicsFactory, CGlobalVarsBase *pGlobals );
-
 	virtual void					PostInit();
 	virtual void					Shutdown( void );
-
 	virtual bool					ReplayInit( CreateInterfaceFn fnReplayFactory );
 	virtual bool					ReplayPostInit();
-
 	virtual void					LevelInitPreEntity( const char *pMapName );
 	virtual void					LevelInitPostEntity();
 	virtual void					LevelShutdown( void );
@@ -572,9 +562,11 @@ public:
 	virtual void					IN_ClearStates( void );
 	virtual bool					IN_IsKeyDown( const char *name, bool& isdown );
 	virtual void					IN_OnMouseWheeled( int nDelta );
+
 	// Raw signal
 	virtual int						IN_KeyEvent( int eventcode, ButtonCode_t keynum, const char *pszCurrentBinding );
 	virtual void					IN_SetSampleTime( float frametime );
+
 	// Create movement command
 	virtual void					CreateMove ( int sequence_number, float input_sample_frametime, bool active );
 	virtual void					ExtraMouseSample( float frametime, bool active );
@@ -582,24 +574,16 @@ public:
 	virtual void					EncodeUserCmdToBuffer( bf_write& buf, int slot );
 	virtual void					DecodeUserCmdFromBuffer( bf_read& buf, int slot );
 
-
 	virtual void					View_Render( vrect_t *rect );
 	virtual void					RenderView( const CViewSetup &view, int nClearFlags, int whatToDraw );
 	virtual void					View_Fade( ScreenFade_t *pSF );
-	
 	virtual void					SetCrosshairAngle( const QAngle& angle );
-
 	virtual void					InitSprite( CEngineSprite *pSprite, const char *loadname );
 	virtual void					ShutdownSprite( CEngineSprite *pSprite );
-
 	virtual int						GetSpriteSize( void ) const;
-
 	virtual void					VoiceStatus( int entindex, qboolean bTalking );
-
 	virtual void					InstallStringTableCallback( const char *tableName );
-
 	virtual void					FrameStageNotify( ClientFrameStage_t curStage );
-
 	virtual bool					DispatchUserMessage( int msg_type, bf_read &msg_data );
 
 	// Save/restore system hooks
@@ -622,7 +606,6 @@ public:
 	virtual CStandardRecvProxies* GetStandardRecvProxies();
 
 	virtual bool			CanRecordDemo( char *errorMsg, int length ) const;
-
 	virtual void			OnDemoRecordStart( char const* pDemoBaseName );
 	virtual void			OnDemoRecordStop();
 	virtual void			OnDemoPlaybackStart( char const* pDemoBaseName );
@@ -672,9 +655,8 @@ public:
 	
 	// Returns true if the disconnect command has been handled by the client
 	virtual bool DisconnectAttempt( void );
-public:
-	void PrecacheMaterial( const char *pMaterialName );
 
+	void PrecacheMaterial( const char *pMaterialName );
 	virtual bool IsConnectedUserInfoChangeAllowed( IConVar *pCvar );
 
 private:
@@ -711,7 +693,6 @@ int GetMaterialIndex( const char *pMaterialName )
 		if (nIndex >= 0)
 			return nIndex;
 	}
-
 	// This is the invalid string index
 	return 0;
 }
@@ -731,7 +712,6 @@ const char *GetMaterialNameFromIndex( int nIndex )
 	}
 }
 
-
 //-----------------------------------------------------------------------------
 // Precaches a particle system
 //-----------------------------------------------------------------------------
@@ -740,7 +720,6 @@ void PrecacheParticleSystem( const char *pParticleSystemName )
 	g_pStringTableParticleEffectNames->AddString( false, pParticleSystemName );
 	g_pParticleSystemMgr->PrecacheParticleSystem( pParticleSystemName );
 }
-
 
 //-----------------------------------------------------------------------------
 // Converts a previously precached particle system into an index
@@ -754,9 +733,7 @@ int GetParticleSystemIndex( const char *pParticleSystemName )
 			return nIndex;
 		DevWarning("Client: Missing precache for particle system \"%s\"!\n", pParticleSystemName );
 	}
-
-	// This is the invalid string index
-	return 0;
+	return 0; // This is the invalid string index
 }
 
 //-----------------------------------------------------------------------------
@@ -784,19 +761,13 @@ bool IsEngineThreaded()
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
-
 CHLClient::CHLClient() 
 {
-	// Kinda bogus, but the logic in the engine is too convoluted to put it there
-	g_bLevelInitialized = false;
+	g_bLevelInitialized = false; // Kinda bogus, but the logic in the engine is too convoluted to put it there
 }
-
-
 
 extern IGameSystem *ViewportClientSystem();
 
-
-//-----------------------------------------------------------------------------
 ISourceVirtualReality *g_pSourceVR = NULL;
 
 // Purpose: Called when the DLL is first loaded.
@@ -963,7 +934,6 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 	vgui::VGui_InitMatSysInterfacesList( "ClientDLL", &appSystemFactory, 1 );
 
 	// Add the client systems.	
-	
 	// Client Leaf System has to be initialized first, since DetailObjectSystem uses it
 	IGameSystem::Add( GameStringSystem() );
 	IGameSystem::Add( SoundEmitterSystem() );
@@ -1064,7 +1034,6 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 #ifdef MAPBASE
 	CommandLine()->AppendParm( "+r_hunkalloclightmaps", "0" );
 #endif
-
 	return true;
 }
 

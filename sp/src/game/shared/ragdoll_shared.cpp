@@ -1,9 +1,4 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose: 
-//
-//=============================================================================//
-
 #include "cbase.h"
 #include "ragdoll_shared.h"
 #include "bone_setup.h"
@@ -20,16 +15,13 @@
 #include "c_entitydissolve.h"
 #include "engine/IEngineSound.h"
 #endif
-
 //SERVER
 #if !defined( CLIENT_DLL )
 #include "util.h"
 #include "EntityFlame.h"
 #include "EntityDissolve.h"
 #endif
-
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+#include "tier0/memdbgon.h" // memdbgon must be the last include file in a .cpp file!!!
 
 CRagdollLowViolenceManager g_RagdollLVManager;
 
@@ -48,24 +40,15 @@ void CRagdollLowViolenceManager::SetLowViolence( const char *pMapName )
 
 	// Turn the low violence ragdoll stuff off if we're in the HL2 Citadel maps because
 	// the player has the super gravity gun and fading ragdolls will break things.
-	if( hl2_episodic.GetBool() )
+	if ( Q_stricmp( pMapName, "d3_citadel_03" ) == 0 ||
+		Q_stricmp( pMapName, "d3_citadel_04" ) == 0 ||
+		Q_stricmp( pMapName, "d3_citadel_05" ) == 0 ||
+		Q_stricmp( pMapName, "d3_breen_01" ) == 0 ||
+		Q_stricmp(pMapName, "ep1_citadel_02") == 0 ||
+		Q_stricmp(pMapName, "ep1_citadel_02b") == 0 ||
+		Q_stricmp(pMapName, "ep1_citadel_03") == 0)
 	{
-		if ( Q_stricmp( pMapName, "ep1_citadel_02" ) == 0 ||
-			Q_stricmp( pMapName, "ep1_citadel_02b" ) == 0 ||
-			Q_stricmp( pMapName, "ep1_citadel_03" ) == 0 )
-		{
-			m_bLowViolence = false;
-		}
-	}
-	else
-	{
-		if ( Q_stricmp( pMapName, "d3_citadel_03" ) == 0 ||
-			Q_stricmp( pMapName, "d3_citadel_04" ) == 0 ||
-			Q_stricmp( pMapName, "d3_citadel_05" ) == 0 ||
-			Q_stricmp( pMapName, "d3_breen_01" ) == 0 )
-		{
-			m_bLowViolence = false;
-		}
+		m_bLowViolence = false;
 	}
 }
 
@@ -142,7 +125,6 @@ public:
 	}
 
 	virtual void SetDefaults( void *pData ) {}
-
 private:
 	ragdoll_t *m_ragdoll;
 };

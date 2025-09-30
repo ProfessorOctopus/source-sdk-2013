@@ -5,7 +5,9 @@
 //-----------------------------------------------------------------------------
 
 $Macro SRCDIR		"..\.."
-$Macro OUTBINDIR	"$SRCDIR\..\game\bin"
+$Macro GAMENAME 	"munted" [!$SOURCESDK]
+$Macro GAMENAME 	"mod_munted" [$SOURCESDK]
+$Macro OUTBINDIR	"$SRCDIR\..\game\$GAMENAME\bin"
 $Macro OUTBINNAME	"vbsp"
 
 $Include "$SRCDIR\vpc_scripts\source_exe_con_base.vpc"
@@ -68,7 +70,6 @@ $Project "Vbsp"
 		$File	"worldvertextransitionfixup.cpp"
 		$File	"writebsp.cpp"
 		$File	"$SRCDIR\public\zip_utils.cpp"
-		
 		$File	"vscript_vbsp.cpp" [$MAPBASE_VSCRIPT]
 		$File	"vscript_vbsp.h" [$MAPBASE_VSCRIPT]
 		$File	"vscript_vbsp.nut" [$MAPBASE_VSCRIPT]
@@ -191,6 +192,5 @@ $Project "Vbsp"
 		$Lib vtf
 		$Lib vscript [$MAPBASE_VSCRIPT]
 	}
-
 	$File	"notes.txt"
 }

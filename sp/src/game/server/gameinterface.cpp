@@ -5,7 +5,6 @@
 //			This files ONLY contains functions and data necessary to build an interface
 //			to external modules
 //===========================================================================//
-
 #include "cbase.h"
 #include "gamestringpool.h"
 #include "mapentities_shared.h"
@@ -35,7 +34,6 @@
 #include "env_wind_shared.h"
 #include "engine/IEngineSound.h"
 #include "ispatialpartition.h"
-#include "textstatsmgr.h"
 #include "bitbuf.h"
 #include "saverestoretypes.h"
 #include "physics_saverestore.h"
@@ -91,11 +89,8 @@
 #ifdef MAPBASE
 #include "world.h"
 #endif
-
 #include "vscript/ivscript.h"
 #include "vscript_server.h"
-
-
 #ifdef TF_DLL
 #include "gc_clientsystem.h"
 #include "econ_item_inventory.h"
@@ -104,39 +99,31 @@
 #include "tf_gamerules.h"
 #include "tf_lobby.h"
 #include "player_vs_environment/tf_population_manager.h"
-
 extern ConVar tf_mm_trusted;
 extern ConVar tf_mm_servermode;
 #endif
-
 #ifdef USE_NAV_MESH
 #include "nav_mesh.h"
 #endif
-
 #ifdef NEXT_BOT
 #include "NextBotManager.h"
 #endif
-
 #ifdef USES_ECON_ITEMS
 #include "econ_item_system.h"
 #endif // USES_ECON_ITEMS
-
 #ifdef CSTRIKE_DLL // BOTPORT: TODO: move these ifdefs out
 #include "bot/bot.h"
 #endif
-
 #ifdef PORTAL
 #include "prop_portal_shared.h"
 #include "portal_player.h"
 #endif
-
 #if defined( REPLAY_ENABLED )
 #include "replay/ireplaysystem.h"
 #endif
 
 extern IToolFrameworkServer *g_pToolFrameworkServer;
 extern IParticleSystemQuery *g_pParticleSystemQuery;
-
 extern ConVar commentary;
 
 #ifndef NO_STEAM
@@ -779,13 +766,6 @@ void CServerGameDLL::DLLShutdown( void )
 	g_pGameSaveRestoreBlockSet->RemoveBlockHandler( GetAISaveRestoreBlockHandler() );
 	g_pGameSaveRestoreBlockSet->RemoveBlockHandler( GetPhysSaveRestoreBlockHandler() );
 	g_pGameSaveRestoreBlockSet->RemoveBlockHandler( GetEntitySaveRestoreBlockHandler() );
-
-	char *pFilename = g_TextStatsMgr.GetStatsFilename();
-	if ( !pFilename || !pFilename[0] )
-	{
-		g_TextStatsMgr.SetStatsFilename( "stats.txt" );
-	}
-	g_TextStatsMgr.WriteFile( filesystem );
 
 	IGameSystem::ShutdownAllSystems();
 

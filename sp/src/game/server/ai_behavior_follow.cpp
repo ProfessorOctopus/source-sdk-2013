@@ -1,9 +1,4 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose:
-//
-//=============================================================================//
-
 #include "cbase.h"
 #include "tier1/utllinkedlist.h"
 #include "bitstring.h"
@@ -17,16 +12,13 @@
 #include "ai_tacticalservices.h"
 #include "ndebugoverlay.h"
 #include "ai_senses.h"
-
 #ifdef HL2_EPISODIC
 	#include "info_darknessmode_lightsource.h"
 #ifdef MAPBASE
 	#include "globalstate.h"
 #endif
 #endif
-
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+#include "tier0/memdbgon.h" // memdbgon must be the last include file in a .cpp file!!!
 
 ConVar	ai_debug_follow( "ai_debug_follow", "0" );
 ConVar	ai_follow_use_points( "ai_follow_use_points", "1" );
@@ -36,16 +28,12 @@ ConVar	ai_follow_use_points_when_moving( "ai_follow_use_points_when_moving", "1"
 #define WAIT_HINT_MIN_DIST		(16*16)		// Was: Square(GetHullWidth())
 
 //-----------------------------------------------------------------------------
-//
 // Purpose: Formation management
-//
 //			Right now, this is in a very preliminary sketch state. (toml 03-03-03)
 //-----------------------------------------------------------------------------
-
 struct AI_FollowSlot_t;
 struct AI_FollowFormation_t;
 struct AI_FollowGroup_t;
-
 struct AI_Follower_t
 {
 	AI_Follower_t()
@@ -399,11 +387,8 @@ bool CAI_FollowBehavior::SetFollowGoal( CAI_FollowGoal *pGoal, bool fFinishCurSc
 	{
 		GetOuter()->ClearCommandGoal();
 
-		if( hl2_episodic.GetBool() )
-		{
-			// Poke the NPC to interrupt any stubborn schedules
-			GetOuter()->SetCondition(COND_PROVOKED);
-		}
+		// Poke the NPC to interrupt any stubborn schedules
+		GetOuter()->SetCondition(COND_PROVOKED);
 
 		SetFollowTarget( pGoal->GetGoalEntity() );
 #ifdef MAPBASE
@@ -1103,12 +1088,9 @@ int CAI_FollowBehavior::SelectScheduleMoveToFormation()
 int CAI_FollowBehavior::SelectSchedule()
 {
 	// Allow a range attack if we need to do it
-	if ( hl2_episodic.GetBool() )
-	{
-		// Range attack
-		if ( GetOuter()->ShouldMoveAndShoot() == false && HasCondition( COND_CAN_RANGE_ATTACK1 ) )
-			return SCHED_RANGE_ATTACK1;
-	}
+	// Range attack
+	if ( GetOuter()->ShouldMoveAndShoot() == false && HasCondition( COND_CAN_RANGE_ATTACK1 ) )
+		return SCHED_RANGE_ATTACK1;
 
 	if ( GetFollowTarget() )
 	{
@@ -1419,12 +1401,7 @@ void CAI_FollowBehavior::StartTask( const Task_t *pTask )
 					m_TimeNextSpreadFacing.Reset();
 
 					bool bIsEpisodicVitalAlly;
-					
-#ifdef HL2_DLL
-					bIsEpisodicVitalAlly = (hl2_episodic.GetBool() && GetOuter()->Classify() == CLASS_PLAYER_ALLY_VITAL);
-#else
-					bIsEpisodicVitalAlly = false;
-#endif//HL2_DLL
+					bIsEpisodicVitalAlly = (GetOuter()->Classify() == CLASS_PLAYER_ALLY_VITAL);
 
 					if( bIsEpisodicVitalAlly )
 					{
@@ -1987,25 +1964,22 @@ void CAI_FollowBehavior::BuildScheduleTestBits()
 	}
 
 	// Add logic for NPCs not able to move and shoot
-	if ( hl2_episodic.GetBool() )
+	if (IsCurScheduleFollowSchedule() && GetOuter()->ShouldMoveAndShoot() == false)
 	{
-		if ( IsCurScheduleFollowSchedule() && GetOuter()->ShouldMoveAndShoot() == false )
-		{
-			GetOuter()->SetCustomInterruptCondition( COND_CAN_RANGE_ATTACK1 );
-		}
+		GetOuter()->SetCustomInterruptCondition(COND_CAN_RANGE_ATTACK1);
+	}
 
 #ifdef HL2_EPISODIC
-		// In Alyx darkness mode, break on the player turning their flashlight off
-		if ( HL2GameRules()->IsAlyxInDarknessMode() )
+	// In Alyx darkness mode, break on the player turning their flashlight off
+	if (HL2GameRules()->IsAlyxInDarknessMode())
+	{
+		if (IsCurSchedule(SCHED_FOLLOW, false) || IsCurSchedule(SCHED_MOVE_TO_FACE_FOLLOW_TARGET, false) ||
+			IsCurSchedule(SCHED_FACE_FOLLOW_TARGET, false))
 		{
-			if ( IsCurSchedule(SCHED_FOLLOW, false) || IsCurSchedule(SCHED_MOVE_TO_FACE_FOLLOW_TARGET, false) ||
-				 IsCurSchedule(SCHED_FACE_FOLLOW_TARGET, false) )
-			{
-				GetOuter()->SetCustomInterruptCondition( GetClassScheduleIdSpace()->ConditionLocalToGlobal( COND_FOLLOW_PLAYER_IS_NOT_LIT ) );
-			}
+			GetOuter()->SetCustomInterruptCondition(GetClassScheduleIdSpace()->ConditionLocalToGlobal(COND_FOLLOW_PLAYER_IS_NOT_LIT));
 		}
-#endif // HL2_EPISODIC
 	}
+#endif // HL2_EPISODIC
 
 	if ( GetNpcState() == NPC_STATE_COMBAT && IsCurScheduleFollowSchedule() )
 	{

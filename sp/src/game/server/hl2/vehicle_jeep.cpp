@@ -1,10 +1,4 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose: 
-//
-// $NoKeywords: $
-//=============================================================================//
-
 #include "cbase.h"
 #include "engine/IEngineSound.h"
 #include "in_buttons.h"
@@ -28,10 +22,8 @@
 #include "vehicle_jeep.h"
 #include "eventqueue.h"
 #include "rumble_shared.h"
-// NVNT haptic utils
-#include "haptics/haptic_utils.h"
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+#include "haptics/haptic_utils.h" // NVNT haptic utils
+#include "tier0/memdbgon.h" // memdbgon must be the last include file in a .cpp file!!!
 
 #define	VEHICLE_HITBOX_DRIVER		1
 #define LOCK_SPEED					10
@@ -39,21 +31,15 @@
 #define JEEP_GUN_PITCH				"vehicle_weapon_pitch"
 #define JEEP_GUN_SPIN				"gun_spin"
 #define	JEEP_GUN_SPIN_RATE			20
-
 #define CANNON_MAX_UP_PITCH			20
 #define CANNON_MAX_DOWN_PITCH		20
 #define CANNON_MAX_LEFT_YAW			90
 #define CANNON_MAX_RIGHT_YAW		90
-
 #define OVERTURNED_EXIT_WAITTIME	2.0f
-
 #define JEEP_AMMOCRATE_HITGROUP		5
-
 #define JEEP_STEERING_SLOW_ANGLE	50.0f
 #define JEEP_STEERING_FAST_ANGLE	15.0f
-
 #define	JEEP_AMMO_CRATE_CLOSE_DELAY	2.0f
-
 #define JEEP_DELTA_LENGTH_MAX	12.0f			// 1 foot
 #define JEEP_FRAMETIME_MIN		1e-6
 
@@ -71,12 +57,8 @@ ConVar	g_jeepexitspeed( "g_jeepexitspeed", "100", FCVAR_CHEAT );
 extern ConVar autoaim_max_dist;
 extern ConVar sv_vehicle_autoaim_scale;
 
-
 //=============================================================================
-//
 // Jeep water data.
-//
-
 BEGIN_SIMPLE_DATADESC( JeepWaterData_t )
 	DEFINE_ARRAY( m_bWheelInWater,			FIELD_BOOLEAN,	JEEP_WHEEL_COUNT ),
 	DEFINE_ARRAY( m_bWheelWasInWater,			FIELD_BOOLEAN,	JEEP_WHEEL_COUNT ),
@@ -801,33 +783,21 @@ void CPropJeep::Think( void )
 			}
 		}
 		
-		if ( hl2_episodic.GetBool() )
+		// Set its running animation idle
+		if ( m_bEnterAnimOn )
 		{
-			// Set its running animation idle
-			if ( m_bEnterAnimOn )
+			// Idle running
+			int nSequence = SelectWeightedSequence( ACT_IDLE_STIMULATED );
+			if ( nSequence > ACTIVITY_NOT_AVAILABLE )
 			{
-				// Idle running
-				int nSequence = SelectWeightedSequence( ACT_IDLE_STIMULATED );
-				if ( nSequence > ACTIVITY_NOT_AVAILABLE )
-				{
-					SetCycle( 0 );
-					m_flAnimTime = gpGlobals->curtime;
-					ResetSequence( nSequence );
-					ResetClientsideFrame();					
-				}
+				SetCycle( 0 );
+				m_flAnimTime = gpGlobals->curtime;
+				ResetSequence( nSequence );
+				ResetClientsideFrame();					
 			}
 		}
-
-		// If we're exiting and have had the tau cannon removed, we don't want to reset the animation
-		if ( hl2_episodic.GetBool() )
-		{
-			// Reset on exit anim
-			GetServerVehicle()->HandleEntryExitFinish( m_bExitAnimOn, m_bExitAnimOn );
-		}
-		else
-		{
-			GetServerVehicle()->HandleEntryExitFinish( m_bExitAnimOn, !(m_bExitAnimOn && TauCannonHasBeenCutOff()) );
-		}
+		// Reset on exit anim
+		GetServerVehicle()->HandleEntryExitFinish( m_bExitAnimOn, m_bExitAnimOn );
 	}
 
 	// See if the ammo crate needs to close

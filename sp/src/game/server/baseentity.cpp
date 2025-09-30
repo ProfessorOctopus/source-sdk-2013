@@ -1,9 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
 // Purpose: The base class from which all game entities are derived.
-//
 //===========================================================================//
-
 #include "cbase.h"
 #include "globalstate.h"
 #include "isaverestore.h"
@@ -69,13 +66,10 @@
 #ifdef NEW_RESPONSE_SYSTEM
 #include "ai_speech.h"
 #endif
-
 #if defined( TF_DLL )
 #include "tf_gamerules.h"
 #endif
-
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+#include "tier0/memdbgon.h" // memdbgon must be the last include file in a .cpp file!!!
 
 extern bool g_bTestMoveTypeStepSimulation;
 extern ConVar sv_vehicle_autoaim_scale;
@@ -109,7 +103,6 @@ ConVar sv_script_think_interval("sv_script_think_interval", "0.1");
 #ifdef MAPBASE_VSCRIPT
 ConVar ent_text_allow_script( "ent_text_allow_script", "1" );
 #endif
-
 
 // This table encodes edict data.
 void SendProxy_AnimTime( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
@@ -368,10 +361,8 @@ CBaseEntity::CBaseEntity( bool bServerOnly )
 	COMPILE_TIME_ASSERT( MOVETYPE_LAST < (1 << MOVETYPE_MAX_BITS) );
 	COMPILE_TIME_ASSERT( MOVECOLLIDE_COUNT < (1 << MOVECOLLIDE_MAX_BITS) );
 
-#ifdef _DEBUG
-	// necessary since in debug, we initialize vectors to NAN for debugging
+#ifdef _DEBUG // necessary since in debug, we initialize vectors to NAN for debugging
 	m_vecAngVelocity.Init();
-//	m_vecAbsAngVelocity.Init();
 	m_vecViewOffset.Init();
 	m_vecBaseVelocity.GetForModify().Init();
 	m_vecVelocity.Init();
@@ -384,8 +375,7 @@ CBaseEntity::CBaseEntity( bool bServerOnly )
 	CollisionProp()->Init( this );
 	NetworkProp()->Init( this );
 
-	// NOTE: THIS MUST APPEAR BEFORE ANY SetMoveType() or SetNextThink() calls
-	AddEFlags( EFL_NO_THINK_FUNCTION | EFL_NO_GAME_PHYSICS_SIMULATION | EFL_USE_PARTITION_WHEN_NOT_SOLID );
+	AddEFlags( EFL_NO_THINK_FUNCTION | EFL_NO_GAME_PHYSICS_SIMULATION | EFL_USE_PARTITION_WHEN_NOT_SOLID ); // NOTE: THIS MUST APPEAR BEFORE ANY SetMoveType() or SetNextThink() calls
 
 	// clear debug overlays
 	m_debugOverlays  = 0;
@@ -535,7 +525,6 @@ void CBaseEntity::PostConstructor( const char *szClassname )
 				edict()->m_pNetworkable = NetworkProp();
 		}
 	}
-
 	CheckHasThinkFunction( false );
 	CheckHasGamePhysicsSimulation();
 }
@@ -543,9 +532,7 @@ void CBaseEntity::PostConstructor( const char *szClassname )
 //-----------------------------------------------------------------------------
 // Purpose: Called after player becomes active in the game
 //-----------------------------------------------------------------------------
-void CBaseEntity::PostClientActive( void )
-{
-}
+void CBaseEntity::PostClientActive( void ){}
 
 //-----------------------------------------------------------------------------
 // Purpose: Verifies that this entity's data description is valid in debug builds.
@@ -605,7 +592,6 @@ void CBaseEntity::ValidateDataDescription(void)
 }
 #endif // _DEBUG
 
-
 //-----------------------------------------------------------------------------
 // Sets the collision bounds + the size
 //-----------------------------------------------------------------------------
@@ -614,15 +600,12 @@ void CBaseEntity::SetCollisionBounds( const Vector& mins, const Vector &maxs )
 	m_Collision.SetCollisionBounds( mins, maxs );
 }
 
-
 void CBaseEntity::StopFollowingEntity( )
 {
 	if( !IsFollowingEntity() )
 	{
-//		Assert( IsEffectActive( EF_BONEMERGE ) == 0 );
 		return;
 	}
-
 	SetParent( NULL );
 	RemoveEffects( EF_BONEMERGE );
 	RemoveSolidFlags( FSOLID_NOT_SOLID );
@@ -728,8 +711,6 @@ struct TimedOverlay_t
 
 //-----------------------------------------------------------------------------
 // Purpose: Display an error message on the entity
-// Input  :
-// Output :
 //-----------------------------------------------------------------------------
 void CBaseEntity::AddTimedOverlay( const char *msg, int endTime )
 {
@@ -745,8 +726,6 @@ void CBaseEntity::AddTimedOverlay( const char *msg, int endTime )
 
 //-----------------------------------------------------------------------------
 // Purpose: Send debug overlay box to the client
-// Input  :
-// Output :
 //-----------------------------------------------------------------------------
 void CBaseEntity::DrawBBoxOverlay( float flDuration )
 {
@@ -788,10 +767,7 @@ void CBaseEntity::DrawAbsBoxOverlay()
 	}
 }
 
-void CBaseEntity::DrawRBoxOverlay()
-{	
-
-}
+void CBaseEntity::DrawRBoxOverlay(){}
 
 //-----------------------------------------------------------------------------
 // Purpose: Draws an axis overlay at the origin and angles of the entity
@@ -828,15 +804,9 @@ void CBaseEntity::EntityText( int text_offset, const char *text, float duration,
 	{
 		VectorTransform( vecLocalCenter, m_Collision.CollisionToWorldTransform(), origin );
 	}
-
 	NDebugOverlay::EntityTextAtPosition( origin, text_offset, text, duration, r, g, b, a );
 }
 
-//------------------------------------------------------------------------------
-// Purpose :
-// Input   :
-// Output  :
-//------------------------------------------------------------------------------
 void CBaseEntity::DrawTimedOverlays(void)
 {
 	// Draw name first if I have an overlay or am in message mode
@@ -5482,7 +5452,7 @@ void ModelSoundsCache_PrecacheScriptSound( const char *soundname )
 	CBaseEntity::PrecacheScriptSound( soundname );
 }
 
-static CUtlCachedFileData< CModelSoundsCache > g_ModelSoundsCache( "modelsounds.cache", MODELSOUNDSCACHE_VERSION, 0, UTL_CACHED_FILE_USE_FILESIZE, false );																  
+static CUtlCachedFileData< CModelSoundsCache > g_ModelSoundsCache( "sound/modelsounds.cache", MODELSOUNDSCACHE_VERSION, 0, UTL_CACHED_FILE_USE_FILESIZE, false );																  
 
 void ClearModelSoundsCache()
 {
@@ -5490,12 +5460,10 @@ void ClearModelSoundsCache()
 	{
 		return;
 	}
-
 	g_ModelSoundsCache.Reload();
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
 bool ModelSoundsCacheInit()
@@ -5504,20 +5472,15 @@ bool ModelSoundsCacheInit()
 	{
 		return true;
 	}
-
 	return g_ModelSoundsCache.Init();
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void ModelSoundsCacheShutdown()
 {
 	if ( IsX360() )
 	{
 		return;
 	}
-
 	g_ModelSoundsCache.Shutdown();
 }
 
@@ -7522,11 +7485,6 @@ void CBaseEntity::ModifyOrAppendCriteria( AI_CriteriaSet& set )
 	// Append anything from I/O or keyvalues pairs
 	AppendContextToCriteria( set );
 #endif
-
-	if( hl2_episodic.GetBool() )
-	{
-		set.AppendCriteria( "episodic", "1" );
-	}
 
 	// Append anything from world I/O/keyvalues with "world" as prefix
 #ifdef MAPBASE

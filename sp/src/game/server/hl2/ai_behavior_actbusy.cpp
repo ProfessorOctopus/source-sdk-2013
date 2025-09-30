@@ -2490,13 +2490,9 @@ CAI_ActBusyBehavior *CAI_ActBusyGoal::GetBusyBehaviorForNPC( CBaseEntity *pEntit
 		Msg("ai_goal_actbusy input %s fired on an NPC that doesn't support ActBusy behavior.\n", sInputName );
 		return NULL;
 	}
-
 	return pBehavior;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 CAI_ActBusyBehavior *CAI_ActBusyGoal::GetBusyBehaviorForNPC( const char *pszActorName, CBaseEntity *pActivator, CBaseEntity *pCaller, const char *sInputName )
 {
 	CBaseEntity *pEntity = gEntList.FindEntityByName( NULL, MAKE_STRING(pszActorName), NULL, pActivator, pCaller );
@@ -2535,7 +2531,6 @@ void CAI_ActBusyGoal::EnableGoal( CAI_BaseNPC *pAI )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
 void CAI_ActBusyGoal::InputActivate( inputdata_t &inputdata )
@@ -2582,9 +2577,6 @@ void CAI_ActBusyGoal::InputDeactivate( inputdata_t &inputdata )
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CAI_ActBusyGoal::InputSetBusySearchRange( inputdata_t &inputdata )
 {
 	m_flBusySearchRange = inputdata.value.Float();
@@ -2625,9 +2617,6 @@ void CAI_ActBusyGoal::InputForceNPCToActBusy( inputdata_t &inputdata )
 	if ( !pBehavior )
 		return;
 
-	// Wrapped this bugfix so that it doesn't break HL2.
-	bool bEpisodicBugFix = hl2_episodic.GetBool();
-
 	// Do we have a specified node too?
 	pszParam = strtok(NULL," ");
 	if ( pszParam )
@@ -2642,20 +2631,12 @@ void CAI_ActBusyGoal::InputForceNPCToActBusy( inputdata_t &inputdata )
 				Msg("ai_goal_actbusy input ForceNPCToActBusy fired targeting an entity that isn't a hintnode.\n");
 				return;
 			}
-
-			if ( bEpisodicBugFix )
-			{
-				pszParam = strtok(NULL," ");
-			}
+			pszParam = strtok(NULL," ");
 		}
 	}
 
 	Activity activity = ACT_INVALID;
-
-	if ( !bEpisodicBugFix )
-	{
- 		pszParam = strtok(NULL," ");
-	}
+ 	pszParam = strtok(NULL," ");
 
 	while ( pszParam )
 	{

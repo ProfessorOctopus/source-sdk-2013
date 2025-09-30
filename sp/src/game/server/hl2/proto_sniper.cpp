@@ -2680,7 +2680,7 @@ Vector CProtoSniper::DesiredBodyTarget( CBaseEntity *pTarget )
 		}
 		else if( !m_bShootZombiesInChest && pTarget->Classify() == CLASS_ZOMBIE )
 		{
-			if( flTimeSinceLastMiss > 0.0f && flTimeSinceLastMiss < 4.0f && hl2_episodic.GetBool() )
+			if( flTimeSinceLastMiss > 0.0f && flTimeSinceLastMiss < 4.0f)
 			{
 				vecTarget = pTarget->BodyTarget( GetBulletOrigin(), false );
 			}

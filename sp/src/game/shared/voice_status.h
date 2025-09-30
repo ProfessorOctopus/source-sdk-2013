@@ -1,21 +1,12 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose: 
-//
-// $NoKeywords: $
-//=============================================================================//
-
 #ifndef VOICE_STATUS_H
 #define VOICE_STATUS_H
 #pragma once
 
-
 #include <vgui_controls/Label.h>
-//#include "vgui_bitmap.h"
 #include <vgui_controls/Button.h>
 #include <vgui_controls/Image.h>
 #include "voice_common.h"
-#include "voice_banmgr.h"
 #include "hudelement.h"
 
 #ifdef VOICE_VOX_ENABLE
@@ -71,10 +62,7 @@ class CVoiceStatus /*: public vgui::CDefaultInputSignal*/
 public:
 				CVoiceStatus();
 	virtual		~CVoiceStatus();
-
-// CHudBase overrides.
-public:
-	
+	// CHudBase overrides.
 	// Initialize the cl_dll's voice manager.
 	virtual int Init(
 		IVoiceStatusHelper *m_pHelper,
@@ -83,8 +71,6 @@ public:
 	// ackPosition is the bottom position of where CVoiceStatus will draw the voice acknowledgement labels.
 	virtual void VidInit();
 
-public:
-	
 	// Call from HUD_Frame each frame.
 	void	Frame(double frametime);
 
@@ -107,9 +93,7 @@ public:
 	void	HandleReqStateMsg(bf_read &msg);
 
 
-// Squelch mode functions.
-public:
-
+	// Squelch mode functions.
 	// When you enter squelch mode, pass in 
 	void	StartSquelchMode();
 	void	StopSquelchMode();
@@ -136,14 +120,11 @@ public:
 	IMaterial *GetHeadLabelMaterial( void ) { return m_pHeadLabelMaterial; }
 
 private:
-
 	void			UpdateServerState(bool bForce);
 
 	// Update the button artwork to reflect the client's current state.
 	void			UpdateBanButton(int iClient);
 
-
-private:
 	float			m_LastUpdateServerState;		// Last time we called this function.
 	int				m_bServerModEnable;				// What we've sent to the server about our "voice_modenable" cvar.
 
@@ -157,10 +138,6 @@ private:
 	// Players who have spoken at least once in the game so far
 	CPlayerBitVec	m_VoiceEnabledPlayers;	
 
-	// This is who the server THINKS we have banned (it can become incorrect when a new player arrives on the server).
-	// It is checked periodically, and the server is told to squelch or unsquelch the appropriate players.
-	CPlayerBitVec	m_ServerBannedPlayers;
-
 	IVoiceStatusHelper	*m_pHelper;		// Each mod provides an implementation of this.
 
 	// Squelch mode stuff.
@@ -169,18 +146,10 @@ private:
 	bool				m_bTalking;				// Set to true when the client thinks it's talking.
 	bool				m_bServerAcked;			// Set to true when the server knows the client is talking.
 
-public:
-	
-	CVoiceBanMgr		m_BanMgr;				// Tracks which users we have squelched and don't want to hear.
-
-private:
-
 	IMaterial			*m_pHeadLabelMaterial;	// For labels above players' heads.
 
 	bool				m_bBanMgrInitialized;
-
 	int					m_nControlSize;
-
 	bool				m_bHeadLabelsDisabled;
 
 #ifdef VOICE_VOX_ENABLE

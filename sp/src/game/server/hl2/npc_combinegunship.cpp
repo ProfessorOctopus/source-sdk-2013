@@ -1,10 +1,4 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose: 
-//
-// $NoKeywords: $
-//=============================================================================//
-
 #include "cbase.h"
 #include "baseanimating.h"
 #include "ai_network.h"
@@ -47,9 +41,7 @@
 #include "eventqueue.h"
 #include "beam_flags.h"
 #include "ai_eventresponse.h"
-
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+#include "tier0/memdbgon.h" // memdbgon must be the last include file in a .cpp file!!!
 
 #ifdef MAPBASE
 #define BELLYBLAST
@@ -77,31 +69,14 @@ ConVar sk_gunship_burst_dist("sk_gunship_burst_dist", "768" );
 // Number of times the gunship must be struck by explosive damage
 ConVar	sk_gunship_health_increments( "sk_gunship_health_increments", "0" );
 
-/*
-
-Wedge's notes:
-
-  Gunship should move its head according to flight model when the target is behind the gunship,
-  or when the target is too far away to shoot at. Otherwise, the head should aim at the target.
-
-	Negative angvelocity.y is a RIGHT turn.
-	Negative angvelocity.x is UP
-
-*/
-
 #define GUNSHIP_AP_MUZZLE	5
-
 #define GUNSHIP_MAX_SPEED			1056.0f
-
 #define GUNSHIP_MAX_FIRING_SPEED	200.0f
 #define GUNSHIP_MIN_ROCKET_DIST		1000.0f
 #define GUNSHIP_MAX_GUN_DIST		2000.0f
 #define GUNSHIP_ARRIVE_DIST			128.0f
-
 #define GUNSHIP_HOVER_SPEED			300.0f // play hover animation if moving slower than this.
-
 #define GUNSHIP_AE_THRUST			1
-
 #define GUNSHIP_HEAD_MAX_UP			-65
 #define GUNSHIP_HEAD_MAX_DOWN		60
 #define GUNSHIP_HEAD_MAX_LEFT		60
@@ -120,17 +95,12 @@ Wedge's notes:
 #define	MIN_GROUND_ATTACK_HEIGHT_DIFF	128.0f // Target's position and hit position must be within this threshold vertically
 
 #define GUNSHIP_WASH_ALTITUDE		1024.0f
-
 #define	GUNSHIP_MIN_DAMAGE_THRESHOLD	50.0f
-
 #define GUNSHIP_INNER_NAV_DIST			400.0f
 #define GUNSHIP_OUTER_NAV_DIST			800.0f
-
 #define GUNSHIP_BELLYBLAST_TARGET_HEIGHT	512.0		// Height above targets that the gunship wants to be when bellyblasting
-
 #define GUNSHIP_MISSILE_MAX_RESPONSE_TIME	0.4
 #define GUNSHIP_MAX_HITS_PER_BURST			5
-
 #define GUNSHIP_FLARE_IGNORE_TIME		6.0
 
 //=====================================
@@ -166,9 +136,6 @@ public:
 BEGIN_SIMPLE_DATADESC( CGunshipRagdollMotion )
 END_DATADESC()
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 class CTargetGunshipCrash : public CPointEntity
 {
 	DECLARE_CLASS( CTargetGunshipCrash, CPointEntity );
@@ -194,23 +161,16 @@ public:
 
 private:
 	bool			m_bDisabled;
-
 	COutputEvent	m_OnCrashed;
 };
 
 LINK_ENTITY_TO_CLASS( info_target_gunshipcrash, CTargetGunshipCrash );
-
 BEGIN_DATADESC( CTargetGunshipCrash )
 	DEFINE_FIELD( m_bDisabled, FIELD_BOOLEAN ),
-
-	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
-
-	// Outputs
 	DEFINE_OUTPUT( m_OnCrashed,			"OnCrashed" ),
 END_DATADESC()
-
 
 //===================================================================
 // Gunship - the combine dugongic like attack vehicle.
@@ -343,7 +303,6 @@ private:
 	// Outputs
 	COutputEvent	m_OnFireCannon;
 	COutputEvent	m_OnCrashed;
-
 	COutputEvent	m_OnFirstDamage;	// First damage tick
 	COutputEvent	m_OnSecondDamage;
 	COutputEvent	m_OnThirdDamage;
@@ -361,16 +320,13 @@ private:
 
 	CHandle<SmokeTrail>	m_pSmokeTrail;
 	EHANDLE			m_hGroundAttackTarget;
-
 	CSoundPatch		*m_pAirExhaustSound;
 	CSoundPatch		*m_pAirBlastSound;
 	CSoundPatch		*m_pCannonSound;
-
 	CBaseEntity		*m_pRotorWashModel;
 	QAngle			m_vecAngAcceleration;
 
 	float			m_flEndDestructTime;
-
 	int				m_iDoSmokePuff;
 	int				m_iAmmoType;
 	int				m_iBurstSize;
@@ -423,9 +379,7 @@ IMPLEMENT_SERVERCLASS_ST( CNPC_CombineGunship, DT_CombineGunship )
 END_SEND_TABLE()
 
 BEGIN_DATADESC( CNPC_CombineGunship )
-
 	DEFINE_ENTITYFUNC( FlyTouch ),
-
 	DEFINE_FIELD( m_flNextGroundAttack,FIELD_TIME ),
 	DEFINE_FIELD( m_bIsGroundAttacking,FIELD_BOOLEAN ),
 #ifdef MAPBASE
@@ -471,9 +425,7 @@ BEGIN_DATADESC( CNPC_CombineGunship )
 	DEFINE_FIELD( m_bPreFire,			FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bInvulnerable,		FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_flNextGunshipCrashFind, FIELD_TIME ),
-
 	DEFINE_FIELD( m_hEnergyCore, FIELD_EHANDLE ),
-
 	DEFINE_ARRAY( m_bDamageOutputsFired, FIELD_BOOLEAN, GUNSHIP_NUM_DAMAGE_OUTPUTS ),
 
 	// Function pointers
@@ -488,19 +440,14 @@ BEGIN_DATADESC( CNPC_CombineGunship )
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnableGroundAttack", InputEnableGroundAttack ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableGroundAttack", InputDisableGroundAttack ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "DoGroundAttack", InputDoGroundAttack ),
-
 	DEFINE_OUTPUT( m_OnFireCannon,		"OnFireCannon" ),
 	DEFINE_OUTPUT( m_OnFirstDamage,	"OnFirstDamage" ),
 	DEFINE_OUTPUT( m_OnSecondDamage,	"OnSecondDamage" ),
 	DEFINE_OUTPUT( m_OnThirdDamage,	"OnThirdDamage" ),
 	DEFINE_OUTPUT( m_OnFourthDamage,	"OnFourthDamage" ),
 	DEFINE_OUTPUT( m_OnCrashed,			"OnCrashed" ),
-
 END_DATADESC()
 
-//-----------------------------------------------------------------------------
-// Constructor
-//-----------------------------------------------------------------------------
 CNPC_CombineGunship::CNPC_CombineGunship( void )
 { 
 	m_hGroundAttackTarget = NULL;
@@ -510,7 +457,6 @@ CNPC_CombineGunship::CNPC_CombineGunship( void )
 	m_hRagdoll = NULL;
 	m_hCrashTarget = NULL;
 }
-
 
 void CNPC_CombineGunship::CreateBellyBlastEnergyCore( void )
 {
@@ -530,17 +476,12 @@ void CNPC_CombineGunship::CreateBellyBlastEnergyCore( void )
 
 	pCore->SetAbsOrigin( vOrigin );
 	pCore->SetAbsAngles( vAngle );
-
 	DispatchSpawn( pCore );
 	pCore->Activate();
-
 	pCore->SetParent( this, iAttachment );
 	pCore->SetScale( 4.0f );
 }
 
-//------------------------------------------------------------------------------
-// Purpose:
-//------------------------------------------------------------------------------
 void CNPC_CombineGunship::Spawn( void )
 {
 	Precache( );
@@ -640,11 +581,7 @@ void CNPC_CombineGunship::Spawn( void )
 	}
 
 	CapabilitiesAdd( bits_CAP_SQUAD);
-
-	if ( hl2_episodic.GetBool() == true )
-	{
-		CreateBellyBlastEnergyCore();
-	}
+	CreateBellyBlastEnergyCore();
 
 	// Allows autoaim to help attack the gunship.
 	if( g_pGameRules->GetAutoAimMode() == AUTOAIM_ON_CONSOLE )
@@ -666,9 +603,6 @@ void CNPC_CombineGunship::OnRestore( void )
 	}
 }
 
-//------------------------------------------------------------------------------
-// Purpose:
-//------------------------------------------------------------------------------
 void CNPC_CombineGunship::Precache( void )
 {
 	if ( HasSpawnFlags( SF_GUNSHIP_USE_CHOPPER_MODEL ) )
@@ -701,12 +635,8 @@ void CNPC_CombineGunship::Precache( void )
 	PrecacheScriptSound( "NPC_CombineGunship.RotorSound" );
 	PrecacheScriptSound( "NPC_CombineGunship.ExhaustSound" );
 	PrecacheScriptSound( "NPC_CombineGunship.RotorBlastSound" );
-
-	if ( hl2_episodic.GetBool() == true )
-	{
-		UTIL_PrecacheOther( "env_citadel_energy_core" );
-		g_iGunshipEffectIndex = PrecacheModel( "sprites/physbeam.vmt" );
-	}
+	UTIL_PrecacheOther( "env_citadel_energy_core" );
+	g_iGunshipEffectIndex = PrecacheModel( "sprites/physbeam.vmt" );
 
 	PropBreakablePrecacheAll( MAKE_STRING("models/gunship.mdl") );
 
@@ -945,15 +875,11 @@ void CNPC_CombineGunship::StartGroundAttack( void )
 	
 	CSoundEnt::InsertSound ( SOUND_DANGER, endpos, 1024, 0.5f );
 
-	if ( hl2_episodic.GetBool() == true )
+	if ( m_hEnergyCore )
 	{
-		if ( m_hEnergyCore )
-		{
-			variant_t value;
-			value.SetFloat( 3.0f );
-
-			g_EventQueue.AddEvent( m_hEnergyCore, "StartCharge", value, 0, this, this );
-		}
+		variant_t value;
+		value.SetFloat( 3.0f );
+		g_EventQueue.AddEvent( m_hEnergyCore, "StartCharge", value, 0, this, this );
 	}
 }
 
@@ -1125,31 +1051,28 @@ void CNPC_CombineGunship::DoGroundAttackExplosion( void )
 	UTIL_TraceLine( vecSrc, impactPoint, MASK_SHOT, this, COLLISION_GROUP_NONE, &tr );
 	UTIL_DecalTrace( &tr, "Scorch" );
 
-	if ( hl2_episodic.GetBool() == true )
-	{
-		g_pEffects->EnergySplash( tr.endpos, tr.plane.normal );
+	g_pEffects->EnergySplash(tr.endpos, tr.plane.normal);
 
-		CBroadcastRecipientFilter filter;
-		te->BeamRingPoint( filter, 0.0, 
-			tr.endpos,							//origin
-			0,									//start radius
-			GUNSHIP_BELLY_BLAST_RADIUS,			//end radius
-			g_iGunshipEffectIndex,				//texture
-			0,									//halo index
-			0,									//start frame
-			0,									//framerate
-			0.2,								//life
-			10,									//width
-			0,									//spread
-			0,									//amplitude
-			255,								//r
-			255,								//g
-			255,								//b
-			50,									//a
-			0,									//speed
-			FBEAM_FADEOUT
-			);
-	}
+	CBroadcastRecipientFilter filter;
+	te->BeamRingPoint(filter, 0.0,
+		tr.endpos,							//origin
+		0,									//start radius
+		GUNSHIP_BELLY_BLAST_RADIUS,			//end radius
+		g_iGunshipEffectIndex,				//texture
+		0,									//halo index
+		0,									//start frame
+		0,									//framerate
+		0.2,								//life
+		10,									//width
+		0,									//spread
+		0,									//amplitude
+		255,								//r
+		255,								//g
+		255,								//b
+		50,									//a
+		0,									//speed
+		FBEAM_FADEOUT
+	);
 
 	// Send the effect over
 	CEffectData	data;
@@ -1177,9 +1100,6 @@ void CNPC_CombineGunship::DoGroundAttackExplosion( void )
 	DoBellyBlastDamage( tr, vBlastMins, vBlastMaxs );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CNPC_CombineGunship::StopGroundAttack( bool bDoAttack )
 {
 	if ( !m_bIsGroundAttacking )
@@ -1198,15 +1118,11 @@ void CNPC_CombineGunship::StopGroundAttack( bool bDoAttack )
 		WRITE_VEC3COORD( hitPos );
 	MessageEnd();
 
-	if ( hl2_episodic.GetBool() == true )
+	if ( m_hEnergyCore )
 	{
-		if ( m_hEnergyCore )
-		{
-			variant_t value;
-			value.SetFloat( 1.0f );
-
-			g_EventQueue.AddEvent( m_hEnergyCore, "Stop", value, 0, this, this );
-		}
+		variant_t value;
+		value.SetFloat( 1.0f );
+		g_EventQueue.AddEvent( m_hEnergyCore, "Stop", value, 0, this, this );
 	}
 
 	// Only attack if told to
@@ -1993,7 +1909,7 @@ void CNPC_CombineGunship::BeginDestruct( void )
 	m_flEndDestructTime = gpGlobals->curtime + 3.0;
 
 	// Clamp velocity
-	if( hl2_episodic.GetBool() && GetAbsVelocity().Length() > 700.0f )
+	if(GetAbsVelocity().Length() > 700.0f )
 	{
 		Vector vecVelocity = GetAbsVelocity(); 
 		VectorNormalize( vecVelocity );
@@ -2254,7 +2170,7 @@ void CNPC_CombineGunship::Flight( void )
 
 	Vector vecImpulse = m_flForce * up;
 	
-	if ( !m_hCrashTarget && m_lifeState == LIFE_DYING && !hl2_episodic.GetBool() )
+	if ( !m_hCrashTarget && m_lifeState == LIFE_DYING)
 	{
 		// Force gunship to the ground if it doesn't have a specific place to crash.
 		// EXCEPT In episodic, where forcing it to the ground means it crashes where the player can't see (attic showdown) (sjb)

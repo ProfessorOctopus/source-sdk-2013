@@ -1,10 +1,7 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
 // Purpose: combine ball -	can be held by the super physcannon and launched
 //							by the AR2's alt-fire
-//
 //=============================================================================//
-
 #include "cbase.h"
 #include "prop_combine_ball.h"
 #include "props.h"
@@ -26,19 +23,13 @@
 #include "eventqueue.h"
 #include "physics_collisionevent.h"
 #include "gamestats.h"
-
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+#include "tier0/memdbgon.h" // memdbgon must be the last include file in a .cpp file!!!
 
 #define PROP_COMBINE_BALL_MODEL	"models/effects/combineball.mdl"
 #define PROP_COMBINE_BALL_SPRITE_TRAIL "sprites/combineball_trail_black_1.vmt" 
-
 #define PROP_COMBINE_BALL_LIFETIME	4.0f	// Seconds
-
 #define PROP_COMBINE_BALL_HOLD_DISSOLVE_TIME	8.0f
-
 #define SF_COMBINE_BALL_BOUNCING_IN_SPAWNER		0x10000
-
 #define	MAX_COMBINEBALL_RADIUS	12
 
 ConVar	sk_npc_dmg_combineball( "sk_npc_dmg_combineball","15", FCVAR_REPLICATED);
@@ -60,32 +51,22 @@ static const char *s_pAnimThinkContext = "AnimThinkContext";
 static const char *s_pCaptureContext = "CaptureContext";
 static const char *s_pRemoveContext = "RemoveContext";
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : radius - 
-// Output : CBaseEntity
-//-----------------------------------------------------------------------------
 CBaseEntity *CreateCombineBall( const Vector &origin, const Vector &velocity, float radius, float mass, float lifetime, CBaseEntity *pOwner )
 {
 	CPropCombineBall *pBall = static_cast<CPropCombineBall*>( CreateEntityByName( "prop_combine_ball" ) );
 	pBall->SetRadius( radius );
-
 	pBall->SetAbsOrigin( origin );
 	pBall->SetOwnerEntity( pOwner );
 	pBall->SetOriginalOwner( pOwner );
-
 	pBall->SetAbsVelocity( velocity );
 	pBall->Spawn();
-
 	pBall->SetState( CPropCombineBall::STATE_THROWN );
 	pBall->SetSpeed( velocity.Length() );
-
 	pBall->EmitSound( "NPC_CombineBall.Launch" );
 
 	PhysSetGameFlags( pBall->VPhysicsGetObject(), FVPHYSICS_WAS_THROWN );
 
 	pBall->StartWhizSoundThink();
-
 	pBall->SetMass( mass );
 	pBall->StartLifetime( lifetime );
 	pBall->SetWeaponLaunched( true );
@@ -123,16 +104,6 @@ bool UTIL_IsCombineBall( CBaseEntity *pEntity )
 	// Must be the correct collision group
 	if ( pEntity->GetCollisionGroup() != HL2COLLISION_GROUP_COMBINE_BALL )
 		return false;
-
-	//NOTENOTE: This allows ANY combine ball to pass the test
-
-	/*
-	CPropCombineBall *pBall = dynamic_cast<CPropCombineBall *>(pEntity);
-
-	if ( pBall && pBall->WasWeaponLaunched() )
-		return false;
-	*/
-
 	return true;
 }
 
@@ -172,14 +143,10 @@ bool UTIL_IsCombineBallDefinite( CBaseEntity *pEntity )
 }
 
 //-----------------------------------------------------------------------------
-//
 // Spawns combine balls
-//
 //-----------------------------------------------------------------------------
 #define SF_SPAWNER_START_DISABLED 0x1000
 #define SF_SPAWNER_POWER_SUPPLY 0x2000
-
-
 
 //-----------------------------------------------------------------------------
 // Implementation of CPropCombineBall
@@ -256,7 +223,6 @@ void CPropCombineBall::Precache( void )
 {
 	//NOTENOTE: We don't call into the base class because it chains multiple 
 	//			precaches we don't need to incur
-
 	PrecacheModel( PROP_COMBINE_BALL_MODEL );
 	PrecacheModel( PROP_COMBINE_BALL_SPRITE_TRAIL );
 
@@ -264,23 +230,11 @@ void CPropCombineBall::Precache( void )
 
 	PrecacheScriptSound( "NPC_CombineBall.Launch" );
 	PrecacheScriptSound( "NPC_CombineBall.KillImpact" );
-
-	if ( hl2_episodic.GetBool() )
-	{
-		PrecacheScriptSound( "NPC_CombineBall_Episodic.Explosion" );
-		PrecacheScriptSound( "NPC_CombineBall_Episodic.WhizFlyby" );
-		PrecacheScriptSound( "NPC_CombineBall_Episodic.Impact" );
-	}
-	else
-	{
-		PrecacheScriptSound( "NPC_CombineBall.Explosion" );
-		PrecacheScriptSound( "NPC_CombineBall.WhizFlyby" );
-		PrecacheScriptSound( "NPC_CombineBall.Impact" );
-	}
-
+	PrecacheScriptSound( "NPC_CombineBall_Episodic.Explosion" );
+	PrecacheScriptSound( "NPC_CombineBall_Episodic.WhizFlyby" );
+	PrecacheScriptSound( "NPC_CombineBall_Episodic.Impact" );
 	PrecacheScriptSound( "NPC_CombineBall.HoldingInPhysCannon" );
 }
-
 
 //-----------------------------------------------------------------------------
 // Spherical vphysics
@@ -360,10 +314,8 @@ bool CPropCombineBall::CreateVPhysics()
 	{
 		PhysSetGameFlags( pPhysicsObject, FVPHYSICS_DMG_DISSOLVE | FVPHYSICS_HEAVY_OBJECT );
 	}
-
 	return true;
 }
-
 
 //-----------------------------------------------------------------------------
 // Spawn: 
@@ -410,19 +362,14 @@ void CPropCombineBall::Spawn( void )
 		m_pGlowTrail->SetLifeTime( 0.1f );
 		m_pGlowTrail->TurnOff();
 	}
-
 	m_bEmit = true;
 	m_bHeld = false;
 	m_bLaunched = false;
 	m_bStruckEntity = false;
 	m_bWeaponLaunched = false;
-
 	m_flNextDamageTime = gpGlobals->curtime;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CPropCombineBall::StartAnimating( void )
 {
 	// Start our animation cycle. Use the random to avoid everything thinking the same frame
@@ -436,9 +383,6 @@ void CPropCombineBall::StartAnimating( void )
 	ResetClientsideFrame();
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CPropCombineBall::StopAnimating( void )
 {
 	SetContextThink( NULL, gpGlobals->curtime, s_pAnimThinkContext );
@@ -499,12 +443,10 @@ void CPropCombineBall::ReplaceInSpawner( float flSpeed )
 	SetSpeed( flSpeed );
 }
 
-
 float CPropCombineBall::LastCaptureTime() const
 {
 	if ( IsInField() || IsBeingCaptured() )
 		return gpGlobals->curtime;
-
 	return m_flLastCaptureTime;
 }
 
@@ -579,9 +521,6 @@ void CPropCombineBall::InputKill( inputdata_t &inputdata )
 	NotifySpawnerOfRemoval();
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CPropCombineBall::InputSocketed( inputdata_t &inputdata )
 {
 	// tell owner ( if any ) that we're dead.This is mostly for NPCMaker functionality.
@@ -598,16 +537,11 @@ void CPropCombineBall::InputSocketed( inputdata_t &inputdata )
 	{
 		pPlayer->CombineBallSocketed( this );
 	}
-
 	UTIL_Remove( this );
-
 	NotifySpawnerOfRemoval();
 }
 
 #ifdef MAPBASE
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CPropCombineBall::InputSetLifetime( inputdata_t &inputdata )
 {
 	if (m_bHeld)
@@ -644,9 +578,6 @@ void CPropCombineBall::InputSetLifetime( inputdata_t &inputdata )
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CPropCombineBall::InputAddLifetime( inputdata_t &inputdata )
 {
 	if (m_bHeld)
@@ -696,24 +627,17 @@ void CPropCombineBall::UpdateOnRemove()
 	}
 
 	//Sigh... this is the only place where I can get a message after the ball is done dissolving.
-	if ( hl2_episodic.GetBool()  )
+	if ( IsDissolving() )
 	{
-		if ( IsDissolving() )
+		if ( GetSpawner() )
 		{
-			if ( GetSpawner() )
-			{
-				GetSpawner()->BallGrabbed( this );
-				NotifySpawnerOfRemoval();
-			}
+			GetSpawner()->BallGrabbed( this );
+			NotifySpawnerOfRemoval();
 		}
 	}
-
 	BaseClass::UpdateOnRemove();
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CPropCombineBall::ExplodeThink( void )
 {
 	DoExplosion();	
@@ -738,14 +662,12 @@ void CPropCombineBall::DieThink()
 	if ( GetSpawner() )
 	{
 		//Let the spawner know we died so it does it's thing
-		if( hl2_episodic.GetBool() && IsInField() )
+		if(IsInField() )
 		{
 			GetSpawner()->BallGrabbed( this );
 		}
-
 		GetSpawner()->RespawnBall( 0.1 );
 	}
-
 	UTIL_Remove( this );
 }
 
@@ -830,14 +752,7 @@ void CPropCombineBall::WhizSoundThink()
 
 						EmitSound_t ep;
 						ep.m_nChannel = CHAN_STATIC;
-						if ( hl2_episodic.GetBool() )
-						{
-							ep.m_pSoundName = "NPC_CombineBall_Episodic.WhizFlyby";
-						}
-						else
-						{
-							ep.m_pSoundName = "NPC_CombineBall.WhizFlyby";
-						}
+						ep.m_pSoundName = "NPC_CombineBall_Episodic.WhizFlyby";
 						ep.m_flVolume = 1.0f;
 						ep.m_SoundLevel = SNDLVL_NORM;
 
@@ -867,14 +782,7 @@ void CPropCombineBall::WhizSoundThink()
 
 					EmitSound_t ep;
 					ep.m_nChannel = CHAN_STATIC;
-					if ( hl2_episodic.GetBool() )
-					{
-						ep.m_pSoundName = "NPC_CombineBall_Episodic.WhizFlyby";
-					}
-					else
-					{
-						ep.m_pSoundName = "NPC_CombineBall.WhizFlyby";
-					}
+					ep.m_pSoundName = "NPC_CombineBall_Episodic.WhizFlyby";
 					ep.m_flVolume = 1.0f;
 					ep.m_SoundLevel = SNDLVL_NORM;
 
@@ -887,13 +795,9 @@ void CPropCombineBall::WhizSoundThink()
 		}
 
 	}
-
 	SetContextThink( &CPropCombineBall::WhizSoundThink, gpGlobals->curtime + 2.0f * TICK_INTERVAL, s_pWhizThinkContext );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CPropCombineBall::SetBallAsLaunched( void )
 {
 	// Give the ball a duration
@@ -948,16 +852,7 @@ void CPropCombineBall::OnPhysGunPickup( CBasePlayer *pPhysGunUser, PhysGunPickup
 		
 		EmitSound_t ep;
 		ep.m_nChannel = CHAN_STATIC;
-
-		if( hl2_episodic.GetBool() )
-		{
-			ep.m_pSoundName = "NPC_CombineBall_Episodic.HoldingInPhysCannon";
-		}
-		else
-		{
-			ep.m_pSoundName = "NPC_CombineBall.HoldingInPhysCannon";
-		}
-
+		ep.m_pSoundName = "NPC_CombineBall_Episodic.HoldingInPhysCannon";
 		ep.m_flVolume = 1.0f;
 		ep.m_SoundLevel = SNDLVL_NORM;
 
@@ -998,9 +893,7 @@ void CPropCombineBall::OnPhysGunPickup( CBasePlayer *pPhysGunUser, PhysGunPickup
 
 		// Set us as being launched by the player
 		SetPlayerLaunched( pPhysGunUser );
-
 		SetBallAsLaunched();
-
 		StopAnimating();
 	}
 }
@@ -1075,15 +968,11 @@ void CPropCombineBall::OnPhysGunDrop( CBasePlayer *pPhysGunUser, PhysGunDrop_t R
 		// ball is launched directly down the crosshair even if the player is moving.
 		VPhysicsGetObject()->SetVelocity( &vec3_origin, &vec3_origin );
 	}
-
 	SetBallAsLaunched();
 	StopAnimating();
 }
 
 #ifdef MAPBASE
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CPropCombineBall::SpawnerDestroyed( CBaseEntity *pActivator, bool *bSeekEnemy )
 {
 	SetState( STATE_THROWN );
@@ -1123,11 +1012,6 @@ void CPropCombineBall::SpawnerDestroyed( CBaseEntity *pActivator, bool *bSeekEne
 		// Don't do impact damage. Just touch them and do your dissolve damage and move on.
 		PhysSetGameFlags( VPhysicsGetObject(), FVPHYSICS_NO_NPC_IMPACT_DMG );
 	}
-
-	//if (pActivator->IsPlayer())
-	//{
-	//	SetPlayerLaunched( ToBasePlayer( pActivator ) );
-	//}
 
 	Vector vecVelocity;
 
@@ -1201,10 +1085,6 @@ void CPropCombineBall::StopLoopingSounds()
 	}
 }
 
-
-//------------------------------------------------------------------------------
-// Pow!
-//------------------------------------------------------------------------------
 void CPropCombineBall::DissolveRampSoundThink( )
 {
 	float dt = GetBallHoldDissolveTime() - GetBallHoldSoundRampTime();
@@ -1216,40 +1096,28 @@ void CPropCombineBall::DissolveRampSoundThink( )
 	SetContextThink( &CPropCombineBall::DissolveThink, gpGlobals->curtime + dt, s_pHoldDissolveContext );
 }
 
-
-//------------------------------------------------------------------------------
-// Pow!
-//------------------------------------------------------------------------------
 void CPropCombineBall::DissolveThink( )
 {
 	DoExplosion();
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 float CPropCombineBall::GetBallHoldDissolveTime()
 {
 	float flDissolveTime = PROP_COMBINE_BALL_HOLD_DISSOLVE_TIME;
 
-	if( g_pGameRules->IsSkillLevel( 1 ) && hl2_episodic.GetBool() )
+	if( g_pGameRules->IsSkillLevel( 1 ))
 	{
 		// Give players more time to handle/aim combine balls on Easy.
 		flDissolveTime *= 1.5f;
 	}
-
 	return flDissolveTime;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 float CPropCombineBall::GetBallHoldSoundRampTime()
 {
 	return GetBallHoldDissolveTime() - 1.0f;
 }
 
-//------------------------------------------------------------------------------
-// Pow!
-//------------------------------------------------------------------------------
 void CPropCombineBall::DoExplosion( )
 {
 	// don't do this twice
@@ -1272,14 +1140,7 @@ void CPropCombineBall::DoExplosion( )
 
 	if ( OutOfBounces() == false )
 	{
-		if ( hl2_episodic.GetBool() )
-		{
-			EmitSound( "NPC_CombineBall_Episodic.Explosion" );
-		}
-		else
-		{
-			EmitSound( "NPC_CombineBall.Explosion" );
-		}
+		EmitSound( "NPC_CombineBall_Episodic.Explosion" );
 
 		UTIL_ScreenShake( GetAbsOrigin(), 20.0f, 150.0, 1.0, 1250.0f, SHAKE_START );
 
@@ -1351,10 +1212,7 @@ void CPropCombineBall::DoExplosion( )
 			);
 	}
 
-	if( hl2_episodic.GetBool() )
-	{
-		CSoundEnt::InsertSound( SOUND_COMBAT | SOUND_CONTEXT_EXPLOSION, WorldSpaceCenter(), 180.0f, 0.25, this );
-	}
+	CSoundEnt::InsertSound( SOUND_COMBAT | SOUND_CONTEXT_EXPLOSION, WorldSpaceCenter(), 180.0f, 0.25, this );
 
 	// Turn us off and wait because we need our trails to finish up properly
 	SetAbsVelocity( vec3_origin );
@@ -1363,8 +1221,7 @@ void CPropCombineBall::DoExplosion( )
 
 	m_bEmit = false;
 
-	
-	if( !m_bStruckEntity && hl2_episodic.GetBool() && GetOwnerEntity() != NULL )
+	if( !m_bStruckEntity && GetOwnerEntity() != NULL )
 	{
 		// Notify the player proxy that this combine ball missed so that it can fire an output.
 		CHL2_Player *pPlayer = dynamic_cast<CHL2_Player *>( GetOwnerEntity() );
@@ -1373,7 +1230,6 @@ void CPropCombineBall::DoExplosion( )
 			pPlayer->MissedAR2AltFire();
 		}
 	}
-
 	SetContextThink( &CPropCombineBall::SUB_Remove, gpGlobals->curtime + 0.5f, s_pRemoveContext );
 	StopLoopingSounds();
 }
@@ -1394,9 +1250,6 @@ void CPropCombineBall::InputFadeAndRespawn( inputdata_t &inputdata )
 	FadeOut( 0.1f );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CPropCombineBall::CollisionEventToTrace( int index, gamevcollisionevent_t *pEvent, trace_t &tr )
 {
 	UTIL_ClearTrace( tr );
@@ -1408,8 +1261,6 @@ void CPropCombineBall::CollisionEventToTrace( int index, gamevcollisionevent_t *
 	tr.fraction = 0.01f;	// spoof!
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CPropCombineBall::DissolveEntity( CBaseEntity *pEntity )
 {
 	if( pEntity->IsEFlagSet( EFL_NO_DISSOLVE ) )
@@ -1427,23 +1278,12 @@ bool CPropCombineBall::DissolveEntity( CBaseEntity *pEntity )
 		return false;
 
 	pEntity->GetBaseAnimating()->Dissolve( "", gpGlobals->curtime, false, ENTITY_DISSOLVE_NORMAL );
-	
+
 	// Note that we've struck an entity
 	m_bStruckEntity = true;
-	
-	// Force an NPC to not drop their weapon if dissolved
-//	CBaseCombatCharacter *pBCC = ToBaseCombatCharacter( pEntity );
-//	if ( pBCC != NULL )
-//	{
-//		pEntity->AddSpawnFlags( SF_NPC_NO_WEAPON_DROP );
-//	}
-
 	return true;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CPropCombineBall::OnHitEntity( CBaseEntity *pHitEntity, float flSpeed, int index, gamevcollisionevent_t *pEvent )
 {
 	// Detonate on the strider + the bone followers in the strider
@@ -1481,18 +1321,13 @@ void CPropCombineBall::OnHitEntity( CBaseEntity *pHitEntity, float flSpeed, int 
 				{
 					EmitSound( "NPC_CombineBall.KillImpact" );
 
-					if ( pHitEntity->IsNPC() && pHitEntity->Classify() != CLASS_PLAYER_ALLY_VITAL && hl2_episodic.GetBool() == true )
+					if ( pHitEntity->IsNPC() && pHitEntity->Classify() != CLASS_PLAYER_ALLY_VITAL)
 					{
 						if ( pHitEntity->Classify() != CLASS_PLAYER_ALLY || ( pHitEntity->Classify() == CLASS_PLAYER_ALLY && m_bStruckEntity == false ) )
 						{
 							info.SetDamage( pHitEntity->GetMaxHealth() );
 							m_bStruckEntity = true;
 						}
-					}
-					else
-					{
-						// Ignore touches briefly.
-						m_flNextDamageTime = gpGlobals->curtime + 0.1f;
 					}
 
 #ifdef MAPBASE
@@ -1546,10 +1381,6 @@ void CPropCombineBall::OnHitEntity( CBaseEntity *pHitEntity, float flSpeed, int 
 	PhysCallbackSetVelocity( pEvent->pObjects[index], vecFinalVelocity ); 
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CPropCombineBall::DoImpactEffect( const Vector &preVelocity, int index, gamevcollisionevent_t *pEvent )
 {
 	// Do that crazy impact effect!
@@ -1577,15 +1408,7 @@ void CPropCombineBall::DoImpactEffect( const Vector &preVelocity, int index, gam
 
 		DispatchEffect( "cball_bounce", data );
 	}
-
-	if ( hl2_episodic.GetBool() )
-	{
-		EmitSound( "NPC_CombineBall_Episodic.Impact" );
-	}
-	else
-	{
-		EmitSound( "NPC_CombineBall.Impact" );
-	}
+	EmitSound( "NPC_CombineBall_Episodic.Impact" );
 }
 
 //-----------------------------------------------------------------------------
@@ -1661,7 +1484,6 @@ bool CPropCombineBall::IsAttractiveTarget( CBaseEntity *pEntity )
 		if ( tr.fraction < 1.0f && tr.m_pEnt != pEntity )
 			return false;
 	}
-
 	return true;
 }
 
@@ -1766,7 +1588,6 @@ void CPropCombineBall::DeflectTowardEnemy( float flSpeed, int index, gamevcollis
 	}
 }
 
-
 //-----------------------------------------------------------------------------
 // Bounce inside the spawner: 
 //-----------------------------------------------------------------------------
@@ -1787,10 +1608,6 @@ void CPropCombineBall::BounceInSpawner( float flSpeed, int index, gamevcollision
 	PhysCallbackSetVelocity( pEvent->pObjects[index], vecVelocity ); 
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 bool CPropCombineBall::IsHittableEntity( CBaseEntity *pHitEntity )
 {
 	if ( pHitEntity->IsWorld() )
@@ -1803,21 +1620,14 @@ bool CPropCombineBall::IsHittableEntity( CBaseEntity *pHitEntity )
 			// The Strider's Bone Followers are MOVETYPE_PUSH, and we want the combine ball to hit these.
 			return true;
 		}
-
 		// If the entity we hit can take damage, we're good
 		if ( pHitEntity->m_takedamage == DAMAGE_YES )
 			return true;
-
 		return false;
 	}
-
 	return true;
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CPropCombineBall::VPhysicsCollision( int index, gamevcollisionevent_t *pEvent )
 {
 	Vector preVelocity = pEvent->preVelocity[index];
@@ -1827,7 +1637,7 @@ void CPropCombineBall::VPhysicsCollision( int index, gamevcollisionevent_t *pEve
 	{
 		const surfacedata_t *pHit = physprops->GetSurfaceData( pEvent->surfaceProps[!index] );
 
-		if( pHit->game.material != CHAR_TEX_FLESH || !hl2_episodic.GetBool() )
+		if( pHit->game.material != CHAR_TEX_FLESH)
 		{
 			CBaseEntity *pHitEntity = pEvent->pEntities[!index];
 			if ( pHitEntity && IsHittableEntity( pHitEntity ) )
@@ -1920,10 +1730,6 @@ void CPropCombineBall::VPhysicsCollision( int index, gamevcollisionevent_t *pEve
 	}
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CPropCombineBall::AnimThink( void )
 {
 	StudioFrameAdvance();
@@ -1983,7 +1789,6 @@ CFuncCombineBallSpawner::CFuncCombineBallSpawner()
 	m_bShooter = false;
 }
 
-
 //-----------------------------------------------------------------------------
 // Spawn a ball
 //-----------------------------------------------------------------------------
@@ -2011,14 +1816,12 @@ void CFuncCombineBallSpawner::SpawnBall()
 	{
 		pBall->AddSpawnFlags( SF_COMBINE_BALL_BOUNCING_IN_SPAWNER );
 	}
-
 	pBall->Spawn();
 }
 
 void CFuncCombineBallSpawner::Precache()
 {
 	BaseClass::Precache();
-
 	UTIL_PrecacheOther( "prop_combine_ball" );
 }
 
@@ -2030,7 +1833,6 @@ void CFuncCombineBallSpawner::Spawn()
 	BaseClass::Spawn();
 
 	Precache();
-
 	AddEffects( EF_NODRAW );
 	SetModel( STRING( GetModelName() ) );
 	SetSolid( SOLID_BSP );
@@ -2074,7 +1876,6 @@ void CFuncCombineBallSpawner::Spawn()
 	}
 }
 
-
 //-----------------------------------------------------------------------------
 // Enable/disable
 //-----------------------------------------------------------------------------
@@ -2107,7 +1908,6 @@ void CFuncCombineBallSpawner::InputDisable( inputdata_t &inputdata )
 	{
 		m_BallRespawnTime[i] -= gpGlobals->curtime;
 	}
-
 	SetThink( NULL );
 }
 
@@ -2120,8 +1920,7 @@ void CFuncCombineBallSpawner::InputDestroy( inputdata_t &inputdata )
 		return;
 	}
 
-	// One ball always seeks the nearest enemy
-	bool bSoughtEnemy = false;
+	bool bSoughtEnemy = false; // One ball always seeks the nearest enemy
 
 	CBaseEntity *pEnt = gEntList.FindEntityByClassname( NULL, "prop_combine_ball" );
 	while (pEnt)
@@ -2156,11 +1955,9 @@ void CFuncCombineBallSpawner::ChoosePointInBox( Vector *pVecPoint )
 	{
 		flYBoundary = 0.5f;
 	}
-
 	CollisionProp()->RandomPointInBounds( 
 		Vector( flXBoundary, flYBoundary, 0.0f ), Vector( 1.0f - flXBoundary, 1.0f - flYBoundary, 0.0f ), pVecPoint );
 }
-
 
 //-----------------------------------------------------------------------------
 // Choose a random point inside the cylinder
@@ -2187,7 +1984,6 @@ void CFuncCombineBallSpawner::ChoosePointInCylinder( Vector *pVecPoint )
 
 	} while ( flDistSq > m_flRadius * m_flRadius );
 }
-
 
 //-----------------------------------------------------------------------------
 // Register that a reflection occurred
@@ -2216,7 +2012,6 @@ void CFuncCombineBallSpawner::GetTargetEndpoint( bool bForward, Vector *pVecEndP
 		Vector( 0.0f, 0.0f, flZValue ), Vector( 1.0f, 1.0f, flZValue ), pVecEndPoint );
 }
 
-
 //-----------------------------------------------------------------------------
 // Fire ball grabbed output
 //-----------------------------------------------------------------------------
@@ -2242,7 +2037,6 @@ void CFuncCombineBallSpawner::BallGrabbed( CBaseEntity *pCombineBall )
 		pCombineBall->SetContextThink( NULL, gpGlobals->curtime, s_pCaptureContext );
 	}
 }
-
 
 //-----------------------------------------------------------------------------
 // Fire ball grabbed output
@@ -2300,7 +2094,6 @@ void CFuncCombineBallSpawner::GrabBallTouch( CBaseEntity *pOther )
 	}
 }
 
-
 //-----------------------------------------------------------------------------
 // Get a speed for the ball to insert
 //-----------------------------------------------------------------------------
@@ -2320,9 +2113,6 @@ void CFuncCombineBallSpawner::RespawnBall( float flRespawnTime )
 	m_BallRespawnTime.AddToTail( gpGlobals->curtime + flRespawnTime - m_flDisableTime );
 }
 
-//-----------------------------------------------------------------------------
-// 
-//-----------------------------------------------------------------------------
 void CFuncCombineBallSpawner::RespawnBallPostExplosion( void )
 {
 	if ( m_flBallRespawnTime < 0 )

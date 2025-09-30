@@ -230,14 +230,6 @@ protected:
 //-----------------------------------------------------------------------------
 void UTIL_PhyscannonTraceLine( const Vector &vecAbsStart, const Vector &vecAbsEnd, CBaseEntity *pTraceOwner, trace_t *pTrace )
 {
-	// Default to HL2 vanilla
-	if ( hl2_episodic.GetBool() == false )
-	{
-		CTraceFilterNoOwnerTest filter( pTraceOwner, COLLISION_GROUP_NONE );
-		UTIL_TraceLine( vecAbsStart, vecAbsEnd, (MASK_SHOT|CONTENTS_GRATE), &filter, pTrace );
-		return;
-	}
-
 	// First, trace against entities
 	CTraceFilterPhyscannon filter( pTraceOwner, COLLISION_GROUP_NONE );
 	UTIL_TraceLine( vecAbsStart, vecAbsEnd, (MASK_SHOT|CONTENTS_GRATE), &filter, pTrace );
@@ -262,14 +254,6 @@ void UTIL_PhyscannonTraceLine( const Vector &vecAbsStart, const Vector &vecAbsEn
 //-----------------------------------------------------------------------------
 void UTIL_PhyscannonTraceHull( const Vector &vecAbsStart, const Vector &vecAbsEnd, const Vector &vecAbsMins, const Vector &vecAbsMaxs, CBaseEntity *pTraceOwner, trace_t *pTrace )
 {
-	// Default to HL2 vanilla
-	if ( hl2_episodic.GetBool() == false )
-	{
-		CTraceFilterNoOwnerTest filter( pTraceOwner, COLLISION_GROUP_NONE );
-		UTIL_TraceHull( vecAbsStart, vecAbsEnd, vecAbsMins, vecAbsMaxs, (MASK_SHOT|CONTENTS_GRATE), &filter, pTrace );
-		return;
-	}
-
 	// First, trace against entities
 	CTraceFilterPhyscannon filter( pTraceOwner, COLLISION_GROUP_NONE );
 	UTIL_TraceHull( vecAbsStart, vecAbsEnd, vecAbsMins, vecAbsMaxs, (MASK_SHOT|CONTENTS_GRATE), &filter, pTrace );
@@ -1917,23 +1901,17 @@ void CWeaponPhysCannon::Physgun_OnPhysGunPickup( CBaseEntity *pEntity, CBasePlay
 	}
 
 	// Warn Alyx if the player is punting a car around.
-	if( hl2_episodic.GetBool() && mass > 250.0f )
+	CAI_BaseNPC **ppAIs = g_AI_Manager.AccessAIs();
+	int nAIs = g_AI_Manager.NumAIs();
+	for ( int i = 0; i < nAIs; i++ )
 	{
-		CAI_BaseNPC **ppAIs = g_AI_Manager.AccessAIs();
-		int nAIs = g_AI_Manager.NumAIs();
-
-		for ( int i = 0; i < nAIs; i++ )
+		if( ppAIs[ i ]->Classify() == CLASS_PLAYER_ALLY_VITAL )
 		{
-			if( ppAIs[ i ]->Classify() == CLASS_PLAYER_ALLY_VITAL )
-			{
-				ppAIs[ i ]->DispatchInteraction( g_interactionPlayerPuntedHeavyObject, pEntity, pOwner );
-			}
+			ppAIs[ i ]->DispatchInteraction( g_interactionPlayerPuntedHeavyObject, pEntity, pOwner );
 		}
 	}
-
 	Pickup_OnPhysGunPickup( pEntity, pOwner, reason );
 }
-
 
 //-----------------------------------------------------------------------------
 // Punt vphysics
@@ -2304,21 +2282,18 @@ void CWeaponPhysCannon::PrimaryAttack( void )
 		UTIL_PhyscannonTraceLine( start, end, pOwner, &tr );
 		if ( tr.fraction == 1 || !tr.m_pEnt || tr.m_pEnt->IsEFlagSet( EFL_NO_PHYSCANNON_INTERACTION ) )
 		{
-			if( hl2_episodic.GetBool() )
+			// Try to find something in a very small cone. 
+			CBaseEntity* pObject = FindObjectInCone(start, forward, physcannon_punt_cone.GetFloat());
+
+			if (pObject)
 			{
-				// Try to find something in a very small cone. 
-				CBaseEntity *pObject = FindObjectInCone( start, forward, physcannon_punt_cone.GetFloat() );
+				// Trace to the object.
+				UTIL_PhyscannonTraceLine(start, pObject->WorldSpaceCenter(), pOwner, &tr);
 
-				if( pObject )
+				if (tr.m_pEnt && tr.m_pEnt == pObject && !(pObject->IsEFlagSet(EFL_NO_PHYSCANNON_INTERACTION)))
 				{
-					// Trace to the object.
-					UTIL_PhyscannonTraceLine( start, pObject->WorldSpaceCenter(), pOwner, &tr );
-
-					if( tr.m_pEnt && tr.m_pEnt == pObject && !(pObject->IsEFlagSet(EFL_NO_PHYSCANNON_INTERACTION)) )
-					{
-						bValid = true;
-						pEntity = pObject;
-					}
+					bValid = true;
+					pEntity = pObject;
 				}
 			}
 		}
@@ -2626,7 +2601,7 @@ void CWeaponPhysCannon::FindObjectTrace( CBasePlayer *pPlayer, trace_t *pTraceRe
 	float	testLength = TraceLength() * 4.0f;
 	Vector	end = start + forward * testLength;
 
-	if( IsMegaPhysCannon() && hl2_episodic.GetBool() )
+	if( IsMegaPhysCannon())
 	{
 		Vector vecAutoAimDir = pPlayer->GetAutoaimVector( 1.0f, testLength );
 		end = start + vecAutoAimDir * testLength;
@@ -3509,14 +3484,11 @@ void CWeaponPhysCannon::ItemPostFrame()
 		WeaponIdle();
 	}
 
-	if ( hl2_episodic.GetBool() == true )
+	if ( IsMegaPhysCannon() )
 	{
-		if ( IsMegaPhysCannon() )
+		if ( !( pOwner->m_nButtons & IN_ATTACK ) )
 		{
-			if ( !( pOwner->m_nButtons & IN_ATTACK ) )
-			{
-				m_flNextPrimaryAttack = gpGlobals->curtime;
-			}
+			m_flNextPrimaryAttack = gpGlobals->curtime;
 		}
 	}
 
