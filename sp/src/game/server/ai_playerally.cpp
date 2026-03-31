@@ -1,11 +1,5 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose:
-//
-//=============================================================================//
-
 #include "cbase.h"
-
 #include "sceneentity.h"
 #include "ai_playerally.h"
 #include "saverestore_utlmap.h"
@@ -16,9 +10,7 @@
 #include "mapbase/matchers.h"
 #include "ai_memory.h"
 #endif
-
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+#include "tier0/memdbgon.h" // memdbgon must be the last include file in a .cpp file!!!
 
 extern CServerGameDLL g_ServerGameDLL;
 
@@ -56,6 +48,7 @@ ConceptInfo_t g_ConceptInfos[] =
 	{ 	TLK_PQUESTION,		SPEECH_IDLE, 		-1,		-1,		-1,		-1,		-1,		-1,		AICF_DEFAULT,	},
 	{ 	TLK_SMELL,			SPEECH_IDLE, 		-1,		-1,		-1,		-1,		-1,		-1,		AICF_DEFAULT,	},
 	{	TLK_USE,			SPEECH_IMPORTANT,	-1,		-1,		-1,		-1,		-1,		-1,		AICF_DEFAULT,	},
+	{	TLK_PDUSE,			SPEECH_IMPORTANT,	-1,		-1,		-1,		-1,		-1,		-1,		AICF_DEFAULT,	},
 	{ 	TLK_STARTFOLLOW,	SPEECH_IMPORTANT,	-1,		-1,		-1,		-1,		-1,		-1,		AICF_DEFAULT,	},
 	{ 	TLK_STOPFOLLOW,		SPEECH_IMPORTANT,	-1,		-1,		-1,		-1,		-1,		-1,		AICF_DEFAULT,	},
 	{ 	TLK_JOINPLAYER,		SPEECH_IMPORTANT,	-1,		-1,		-1,		-1,		-1,		-1,		AICF_DEFAULT,	},	
@@ -102,6 +95,7 @@ ConceptInfo_t g_ConceptInfos[] =
 	{ 	TLK_SPOTTED_HEADCRAB_LEAVING_ZOMBIE,SPEECH_IMPORTANT, 	-1,		-1,		-1,		-1,		-1,		-1,		AICF_DEFAULT,	},
 	{ 	TLK_DANGER_ZOMBINE_GRENADE,			SPEECH_IMPORTANT, 	-1,		-1,		-1,		-1,		-1,		-1,		AICF_DEFAULT,	},
 	{ 	TLK_BALLSOCKETED,					SPEECH_IMPORTANT, 	-1,		-1,		-1,		-1,		-1,		-1,		AICF_DEFAULT,	},
+	{	TLK_ENEMYSPOTTED,			SPEECH_IMPORTANT,	-1,		-1,		-1,		-1,		-1,		-1,		AICF_DEFAULT,	},
 		
 	// Darkness mode
 	{ 	TLK_DARKNESS_LOSTPLAYER, SPEECH_IMPORTANT,-1,	-1,		-1,		-1,		 -1,	-1,		AICF_DEFAULT,	},
@@ -352,6 +346,7 @@ BEGIN_DATADESC( CAI_PlayerAlly )
 
 	DEFINE_KEYFIELD( m_bGameEndAlly, FIELD_BOOLEAN, "GameEndAlly" ),
 	DEFINE_FIELD( m_bCanSpeakWhileScripting, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_bIsFollowing, FIELD_BOOLEAN ),
 
 	DEFINE_FIELD( m_flHealthAccumulator, FIELD_FLOAT ),
 	DEFINE_FIELD( m_flTimeLastRegen, FIELD_TIME ),

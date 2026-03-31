@@ -29,7 +29,7 @@
 #include "vehicle_base.h"
 #include "npc_headcrab.h"
 #include "npc_BaseZombie.h"
-#endif
+#endif // MAPBASE
 
 ConVar ai_debug_readiness("ai_debug_readiness", "0" );
 ConVar ai_use_readiness("ai_use_readiness", "1" ); // 0 = off, 1 = on, 2 = on for player squad only
@@ -57,7 +57,7 @@ int AE_COMPANION_RELEASE_FLARE;
 
 #ifdef MAPBASE
 ConVar ai_allow_new_weapons( "ai_allow_new_weapons", "1", FCVAR_NONE, "Allows companion NPCs to automatically pick up and use weapons they were unable pick up before, i.e. 357s or crossbows." );
-#endif
+#endif // MAPBASE
 
 #define MAX_TIME_BETWEEN_BARRELS_EXPLODING			5.0f
 #define MAX_TIME_BETWEEN_CONSECUTIVE_PLAYER_KILLS	3.0f
@@ -88,7 +88,7 @@ BEGIN_DATADESC( CNPC_PlayerCompanion )
 #endif	// HL2_EPISODIC
 #ifndef MAPBASE
 	DEFINE_INPUTFUNC( FIELD_STRING, "GiveWeapon",			InputGiveWeapon ),
-#endif
+#endif // MAPBASE
 	DEFINE_FIELD( m_flReadiness,			FIELD_FLOAT ),
 	DEFINE_FIELD( m_flReadinessSensitivity,	FIELD_FLOAT ),
 	DEFINE_FIELD( m_bReadinessCapable,		FIELD_BOOLEAN ),
@@ -107,19 +107,18 @@ BEGIN_DATADESC( CNPC_PlayerCompanion )
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableWeaponPickup", InputDisableWeaponPickup ),
 #if HL2_EPISODIC
 	DEFINE_INPUTFUNC( FIELD_VOID, "ClearAllOutputs", InputClearAllOuputs ),
-#endif
+#endif // HL2_EPISODIC
 	DEFINE_OUTPUT( m_OnWeaponPickup, "OnWeaponPickup" ),
 
 #ifdef MAPBASE
 	DEFINE_AIGRENADE_DATADESC()
 	DEFINE_INPUT( m_iGrenadeCapabilities, FIELD_INTEGER, "SetGrenadeCapabilities" ),
 	DEFINE_INPUT( m_iGrenadeDropCapabilities, FIELD_INTEGER, "SetGrenadeDropCapabilities" ),
-#endif
+#endif // MAPBASE
 
 #ifdef COMPANION_MELEE_ATTACK
 	DEFINE_FIELD( m_nMeleeDamage, FIELD_INTEGER ),
 #endif
-
 END_DATADESC()
 
 CNPC_PlayerCompanion::eCoverType CNPC_PlayerCompanion::gm_fCoverSearchType;
@@ -136,8 +135,17 @@ string_t CNPC_PlayerCompanion::gm_iszRollerMineClassname;
 #ifdef MAPBASE
 string_t CNPC_PlayerCompanion::gm_iszSMG1Classname;
 string_t CNPC_PlayerCompanion::gm_iszAR2Classname;
-#endif
-#endif
+#endif // MAPBASE
+#endif // MAPBASE
+
+// array of friend names
+char *pszNPCFriendsName[4] =
+{
+	"npc_bms_guard",
+	"NPC_scientist",
+	"NPC_sitting_scientist",
+	NULL,
+};
 
 CNPC_PlayerCompanion::CNPC_PlayerCompanion()
 {
@@ -174,14 +182,12 @@ bool CNPC_PlayerCompanion::CreateBehaviors()
 #ifdef MAPBASE
 	AddBehavior( &m_FuncTankBehavior );
 #endif
-	
 	return BaseClass::CreateBehaviors();
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::Precache()
 {
+		PrecacheScriptSound("NPC_BMSGUARD.DIE");
 #ifdef MAPBASE
 	gm_iszMortarClassname = AllocPooledString( "func_tankmortar" );
 	gm_iszGroundTurretClassname = AllocPooledString( "npc_turret_ground" );
@@ -194,8 +200,8 @@ void CNPC_PlayerCompanion::Precache()
 #ifdef MAPBASE
 	gm_iszSMG1Classname = AllocPooledString( "weapon_smg1" );
 	gm_iszAR2Classname = AllocPooledString( "weapon_ar2" );
-#endif
-#endif
+#endif // MAPBASE
+#endif // MAPBASE
 
 #ifdef MAPBASE
 	// Moved from Spawn()
@@ -211,26 +217,21 @@ void CNPC_PlayerCompanion::Precache()
 
 #ifdef MAPBASE
 	PrecacheScriptSound( "Weapon_CombineGuard.Special1" );
-#endif
+#endif // MAPBASE
 
 	BaseClass::Precache();
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::Spawn()
 {
 #ifndef MAPBASE // Moved to Precache()
 	SelectModel();
-#endif
+#endif // MAPBASE
 
 	Precache();
-
 	SetModel( STRING( GetModelName() ) );
-
 	SetHullType(HULL_HUMAN);
 	SetHullSizeNormal();
-
 	SetSolid( SOLID_BBOX );
 	AddSolidFlags( FSOLID_NOT_STANDABLE );
 	SetBloodColor( BLOOD_COLOR_RED );
@@ -269,7 +270,7 @@ void CNPC_PlayerCompanion::Spawn()
 	}
 
 	m_hFlare = NULL;
-#endif // HL2_EPISODIC
+#endif // HL2_EPISODIC && !MAPBASE
 
 #if COMPANION_MELEE_ATTACK
 	m_nMeleeDamage = sk_companion_melee_damage.GetInt();
@@ -278,9 +279,6 @@ void CNPC_PlayerCompanion::Spawn()
 	BaseClass::Spawn();
 }
 
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 int CNPC_PlayerCompanion::Restore( IRestore &restore )
 {
 	int baseResult = BaseClass::Restore( restore );
@@ -297,34 +295,33 @@ int CNPC_PlayerCompanion::Restore( IRestore &restore )
 		Warning( "NPC %s using alternate collision! -- DISABLED\n", STRING( GetEntityName() ) );
 		RemoveSpawnFlags( SF_NPC_ALTCOLLISION );
 	}
-#endif // HL2_EPISODIC
-
+#endif // HL2_EPISODIC && !MAPBASE
 	return baseResult;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 int CNPC_PlayerCompanion::ObjectCaps() 
 { 
 	int caps = UsableNPCObjectCaps( BaseClass::ObjectCaps() );
 	return caps; 
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::ShouldAlwaysThink() 
 { 
 	return ( BaseClass::ShouldAlwaysThink() || ( GetFollowBehavior().GetFollowTarget() && GetFollowBehavior().GetFollowTarget()->IsPlayer() ) ); 
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 Disposition_t CNPC_PlayerCompanion::IRelationType( CBaseEntity *pTarget )
 {
 	if ( !pTarget )
 		return D_NU;
 
 	Disposition_t baseRelationship = BaseClass::IRelationType( pTarget );
+
+	// Player Provoked the NPC now they hate the player.
+	if (pTarget->IsPlayer() && (HasMemory(bits_MEMORY_PROVOKED)))
+	{
+		return D_HT; // HATE
+	}
 
 	if ( baseRelationship != D_LI )
 	{
@@ -346,7 +343,7 @@ Disposition_t CNPC_PlayerCompanion::IRelationType( CBaseEntity *pTarget )
 #else
 				  ((CAI_BaseNPC *)pTarget)->GetActiveWeapon()->ClassMatches( gm_iszShotgunClassname ) &&
 				  ( !GetActiveWeapon() || !GetActiveWeapon()->ClassMatches( gm_iszShotgunClassname ) ) )
-#endif
+#endif // MAPBASE
 		{
 			if ( (pTarget->GetAbsOrigin() - GetAbsOrigin()).LengthSqr() < Square( 25 * 12 ) )
 			{
@@ -356,112 +353,21 @@ Disposition_t CNPC_PlayerCompanion::IRelationType( CBaseEntity *pTarget )
 			}
 		}
 	}
-
 	return baseRelationship;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::IsSilentSquadMember() const
 {
 	if ( (const_cast<CNPC_PlayerCompanion *>(this))->Classify() == CLASS_PLAYER_ALLY_VITAL && m_pSquad && MAKE_STRING(m_pSquad->GetName()) == GetPlayerSquadName() )
 	{
 		return true;
 	}
-
 	return false;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::GatherConditions()
 {
 	BaseClass::GatherConditions();
-
-	if ( AI_IsSinglePlayer() )
-	{
-		CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-
-		if ( Classify() == CLASS_PLAYER_ALLY_VITAL )
-		{
-			bool bInPlayerSquad = ( m_pSquad && MAKE_STRING(m_pSquad->GetName()) == GetPlayerSquadName() );
-			if ( bInPlayerSquad )
-			{
-				if ( GetState() == NPC_STATE_SCRIPT || ( !HasCondition( COND_SEE_PLAYER ) && (GetAbsOrigin() - pPlayer->GetAbsOrigin()).LengthSqr() > Square(50 * 12) ) )
-				{
-					RemoveFromSquad();
-				}
-			}
-			else if ( GetState() != NPC_STATE_SCRIPT )
-			{
-				if ( HasCondition( COND_SEE_PLAYER ) && (GetAbsOrigin() - pPlayer->GetAbsOrigin()).LengthSqr() < Square(25 * 12) )
-				{
-					// Don't stomp our squad if we're in one
-					if ( GetSquad() == NULL )
-					{
-						AddToSquad( GetPlayerSquadName() );
-					}
-				}
-			}
-		}
-
-		m_flBoostSpeed = 0;
-
-		if ( m_AnnounceAttackTimer.Expired() &&
-			 ( GetLastEnemyTime() == 0.0 || gpGlobals->curtime - GetLastEnemyTime() > 20 ) )
-		{
-			// Always delay when an encounter begins
-			m_AnnounceAttackTimer.Set( 4, 8 );
-		}
-
-		if ( GetFollowBehavior().GetFollowTarget() && 
-			 ( GetFollowBehavior().GetFollowTarget()->IsPlayer() || GetCommandGoal() != vec3_invalid ) && 
-			 GetFollowBehavior().IsMovingToFollowTarget() && 
-			 GetFollowBehavior().GetGoalRange() > 0.1 &&
-			 BaseClass::GetIdealSpeed() > 0.1 )
-		{
-			Vector vPlayerToFollower = GetAbsOrigin() - pPlayer->GetAbsOrigin();
-			float dist = vPlayerToFollower.NormalizeInPlace();
-
-			bool bDoSpeedBoost = false;
-			if ( !HasCondition( COND_IN_PVS ) )
-				bDoSpeedBoost = true;
-			else if ( GetFollowBehavior().GetFollowTarget()->IsPlayer() )
-			{
-				if ( dist > GetFollowBehavior().GetGoalRange() * 2 )
-				{
-					float dot = vPlayerToFollower.Dot( pPlayer->EyeDirection3D() );
-					if ( dot < 0 )
-					{
-						bDoSpeedBoost = true;
-					}
-				}
-			}
-
-			if ( bDoSpeedBoost )
-			{
-				float lag = dist / GetFollowBehavior().GetGoalRange();
-
-				float mult;
-				
-				if ( lag > 10.0 )
-					mult = 2.0;
-				else if ( lag > 5.0 )
-					mult = 1.5;
-				else if ( lag > 3.0 )
-					mult = 1.25;
-				else
-					mult = 1.1;
-
-				m_flBoostSpeed = pPlayer->GetSmoothedVelocity().Length();
-
-				if ( m_flBoostSpeed < BaseClass::GetIdealSpeed() )
-					m_flBoostSpeed = BaseClass::GetIdealSpeed();
-
-				m_flBoostSpeed *= mult;
-			}
-		}
-	}
 
 	// Update our readiness if we're 
 	if ( IsReadinessCapable() )
@@ -525,7 +431,7 @@ void CNPC_PlayerCompanion::GatherConditions()
 	{
 		DoCustomCombatAI();
 	}
-#endif
+#endif // MAPBASE
 
 	if ( AI_IsSinglePlayer() && !GetEnemy() && HasCondition( COND_HEAR_PLAYER ) )
 	{
@@ -549,7 +455,7 @@ void CNPC_PlayerCompanion::DoCustomSpeechAI( void )
 	bool bPassengerInTransition = ( IsInAVehicle() && ( m_PassengerBehavior.GetPassengerState() == PASSENGER_STATE_ENTERING || m_PassengerBehavior.GetPassengerState() == PASSENGER_STATE_EXITING ) );
 #else
 	bool bPassengerInTransition = false;
-#endif
+#endif // HL2_EPISODIC
 
 	Vector vecEyePosition = EyePosition();
 	if ( bPassengerInTransition == false && pPlayer && pPlayer->FInViewCone( vecEyePosition ) && pPlayer->FVisible( vecEyePosition ) )
@@ -571,7 +477,7 @@ void CNPC_PlayerCompanion::DoCustomSpeechAI( void )
 	if ( HasCondition( COND_TALKER_PLAYER_DEAD ) && (!pPlayer || IRelationType(pPlayer) > D_FR) )
 #else
 	if ( HasCondition( COND_TALKER_PLAYER_DEAD ) )
-#endif
+#endif // MAPBASE
 	{
 		SpeakIfAllowed( TLK_PLDEAD );
 	}
@@ -623,10 +529,9 @@ void CNPC_PlayerCompanion::DoCustomSpeechAI( void )
 			SpeakIfAllowed( TLK_NEW_ENEMY );
 		}
 	}
-#endif
+#endif // MAPBASE
 }
 
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::PredictPlayerPush()
 {
 	CBasePlayer *pPlayer = AI_GetSinglePlayer();
@@ -681,8 +586,6 @@ void CNPC_PlayerCompanion::BuildScheduleTestBits()
 	}
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 CSound *CNPC_PlayerCompanion::GetBestSound( int validTypes )
 {
 	AISoundIter_t iter;
@@ -698,15 +601,11 @@ CSound *CNPC_PlayerCompanion::GetBestSound( int validTypes )
 				return pCurrentSound;
 			}
 		}
-
 		pCurrentSound = GetSenses()->GetNextHeardSound( &iter );
 	}
-
 	return BaseClass::GetBestSound( validTypes );
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::QueryHearSound( CSound *pSound )
 {
 	if( !BaseClass::QueryHearSound(pSound) )
@@ -731,8 +630,6 @@ bool CNPC_PlayerCompanion::QueryHearSound( CSound *pSound )
 	}
 }
 
-//-----------------------------------------------------------------------------
-
 bool CNPC_PlayerCompanion::QuerySeeEntity( CBaseEntity *pEntity, bool bOnlyHateOrFearIfNPC )
 {
 	CAI_BaseNPC *pOther = pEntity->MyNPCPointer(); 
@@ -742,14 +639,9 @@ bool CNPC_PlayerCompanion::QuerySeeEntity( CBaseEntity *pEntity, bool bOnlyHateO
 	{
 		return true;
 	}
-
 	return BaseClass::QuerySeeEntity( pEntity, bOnlyHateOrFearIfNPC );
 }
 
-
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::ShouldIgnoreSound( CSound *pSound )
 {
 	if ( !BaseClass::ShouldIgnoreSound( pSound ) )
@@ -767,12 +659,9 @@ bool CNPC_PlayerCompanion::ShouldIgnoreSound( CSound *pSound )
 		}
 #endif // HL2_EPISODIC
 	}
-
 	return false;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 int CNPC_PlayerCompanion::SelectSchedule()
 {
 	m_bMovingAwayFromPlayer = false;
@@ -844,7 +733,7 @@ int CNPC_PlayerCompanion::SelectSchedule()
 			}
 		}
 	}
-#endif
+#endif // MAPBASE
 
 	int nSched = SelectFlinchSchedule();
 	if ( nSched != SCHED_NONE )
@@ -877,12 +766,9 @@ int CNPC_PlayerCompanion::SelectSchedule()
 				return schedule;
 		}
 	}
-
 	return BaseClass::SelectSchedule();
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 int CNPC_PlayerCompanion::SelectScheduleDanger()
 {
 	if( HasCondition( COND_HEAR_DANGER ) )
@@ -908,7 +794,7 @@ int CNPC_PlayerCompanion::SelectScheduleDanger()
 #else
 			if ( !(pSound->SoundContext() & (SOUND_CONTEXT_MORTAR|SOUND_CONTEXT_FROM_SNIPER)) || IsOkToCombatSpeak() )
 				SpeakIfAllowed( TLK_DANGER );
-#endif
+#endif // MAPBASE
 
 			if ( HasCondition( COND_PC_SAFE_FROM_MORTAR ) )
 			{
@@ -921,7 +807,6 @@ int CNPC_PlayerCompanion::SelectScheduleDanger()
 				return SCHED_COWER;
 			}
 #endif
-
 			return SCHED_TAKE_COVER_FROM_BEST_SOUND;
 		}
 	}
@@ -946,12 +831,9 @@ int CNPC_PlayerCompanion::SelectScheduleDanger()
 		ClearCondition( COND_PC_HURTBYFIRE );
 		return SCHED_MOVE_AWAY;
 	}
-	
 	return SCHED_NONE;	
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 int CNPC_PlayerCompanion::SelectSchedulePriorityAction()
 {
 	if ( GetGroundEntity() && !IsInAScript() )
@@ -976,12 +858,9 @@ int CNPC_PlayerCompanion::SelectSchedulePriorityAction()
 			KeepRunningBehavior();
 		return schedule;
 	}
-
 	return SCHED_NONE;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 int CNPC_PlayerCompanion::SelectSchedulePlayerPush()
 {
 	if ( HasCondition( COND_PLAYER_PUSHING ) && !IsInAScript() && !IgnorePlayerPushing() )
@@ -993,12 +872,9 @@ int CNPC_PlayerCompanion::SelectSchedulePlayerPush()
 			return SCHED_MOVE_AWAY;
 		}
 	}
-
 	return SCHED_NONE;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::IgnorePlayerPushing( void )
 {
 	// Ignore player pushes if we're leading him
@@ -1010,8 +886,6 @@ bool CNPC_PlayerCompanion::IgnorePlayerPushing( void )
 	return false;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 int CNPC_PlayerCompanion::SelectScheduleCombat()
 {
 #if COMPANION_MELEE_ATTACK
@@ -1046,14 +920,10 @@ int CNPC_PlayerCompanion::SelectScheduleCombat()
 			return SCHED_PC_RANGE_ATTACK2;
 		}
 	}
-#endif
-	
+#endif // MAPBASE
 	return SCHED_NONE;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::CanReload( void )
 {
 	if ( IsRunningDynamicInteraction() )
@@ -1062,8 +932,6 @@ bool CNPC_PlayerCompanion::CanReload( void )
 	return true;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::ShouldDeferToFollowBehavior()
 {
 	if ( !GetFollowBehavior().CanSelectSchedule() || !GetFollowBehavior().FarFromFollowTarget() )
@@ -1121,7 +989,7 @@ bool CNPC_PlayerCompanion::IsValidReasonableFacing( const Vector &vecSightDir, f
 		// Hint node facing should still be obeyed
 		if (GetHintNode() && GetHintNode()->GetIgnoreFacing() != HIF_YES)
 			return true;
-#endif
+#endif // MAPBASE
 
 		Vector vecEyePositionCentered = GetAbsOrigin();
 		vecEyePositionCentered.z = EyePosition().z;
@@ -1131,12 +999,9 @@ bool CNPC_PlayerCompanion::IsValidReasonableFacing( const Vector &vecSightDir, f
 			return false;
 		}
 	}
-
 	return true;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 int CNPC_PlayerCompanion::TranslateSchedule( int scheduleType ) 
 {
 	switch( scheduleType )
@@ -1161,7 +1026,7 @@ int CNPC_PlayerCompanion::TranslateSchedule( int scheduleType )
 #ifdef MAPBASE
 						// Less annoying
 						if ( !pWeapon->m_bInReload && (gpGlobals->curtime - GetLastEnemyTime()) > 5.0f )
-#endif
+#endif // MAPBASE
 						SpeakIfAllowed( TLK_PLRELOAD );
 					}
 				}
@@ -1200,7 +1065,7 @@ int CNPC_PlayerCompanion::TranslateSchedule( int scheduleType )
 			// do so!
 			return SCHED_PC_AR2_ALTFIRE;
 		}
-#endif
+#endif // MAPBASE
 	case SCHED_MOVE_TO_WEAPON_RANGE:
 		if ( IsMortar( GetEnemy() ) )
 			return SCHED_TAKE_COVER_FROM_ENEMY;
@@ -1213,7 +1078,7 @@ int CNPC_PlayerCompanion::TranslateSchedule( int scheduleType )
 		if ( GetEnemy() && EntIsClass( GetEnemy(), gm_isz_class_Gunship ) )
 #else
 		if ( GetEnemy() && FClassnameIs( GetEnemy(), "npc_combinegunship" ) )
-#endif
+#endif // MAPBASE
 			return SCHED_ESTABLISH_LINE_OF_FIRE;
 		break;
 
@@ -1259,15 +1124,10 @@ int CNPC_PlayerCompanion::TranslateSchedule( int scheduleType )
 #else
 		if( !OccupyStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
 			return SCHED_STANDOFF;
-#endif
+#endif // MAPBASE
 		break;
 
 #if COMPANION_MELEE_ATTACK
-	//case SCHED_BACK_AWAY_FROM_ENEMY:
-	//	if (HasCondition(COND_CAN_MELEE_ATTACK1))
-	//		return SCHED_MELEE_ATTACK1;
-	//	break;
-
 	case SCHED_MELEE_ATTACK1:
 		return SCHED_PC_MELEE_AND_MOVE_AWAY;
 #endif
@@ -1319,16 +1179,9 @@ int CNPC_PlayerCompanion::TranslateSchedule( int scheduleType )
 		break;
 #endif
 	}
-
 	return BaseClass::TranslateSchedule( scheduleType );
 }
 
-#ifdef MAPBASE
-//extern float GetCurrentGravity( void );
-#endif
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::StartTask( const Task_t *pTask )
 {
 	switch( pTask->iTask )
@@ -1347,7 +1200,6 @@ void CNPC_PlayerCompanion::StartTask( const Task_t *pTask )
 					m_AnnounceAttackTimer.Set( 10, 30 );
 				}
 			}
-
 			BaseClass::StartTask( pTask );
 			break;
 		}
@@ -1371,16 +1223,6 @@ void CNPC_PlayerCompanion::StartTask( const Task_t *pTask )
 			Assert( ( GetGroundEntity() && ( GetGroundEntity()->IsPlayer() || ( GetGroundEntity()->IsNPC() && IRelationType( GetGroundEntity() ) == D_LI ) ) ) );
 			GetNavigator()->SetAllowBigStep( GetGroundEntity() );
 			ChainStartTask( TASK_MOVE_AWAY_PATH, 48 );
-			
-			/*
-			trace_t tr;
-			UTIL_TraceHull( GetAbsOrigin(), GetAbsOrigin(), GetHullMins(), GetHullMaxs(), MASK_NPCSOLID, this, COLLISION_GROUP_NONE, &tr );
-			if ( tr.startsolid && tr.m_pEnt == GetGroundEntity() )
-			{
-				// Allow us to move through the entity for a short time
-				NPCPhysics_CreateSolver( this, GetGroundEntity(), true, 2.0f );
-			}
-			*/
 		}
 		break;
 
@@ -1399,7 +1241,7 @@ void CNPC_PlayerCompanion::StartTask( const Task_t *pTask )
 
 	case TASK_PC_FACE_TOSS_DIR:
 		break;
-#endif
+#endif // MAPBASE
 
 	default:
 		BaseClass::StartTask( pTask );
@@ -1407,8 +1249,6 @@ void CNPC_PlayerCompanion::StartTask( const Task_t *pTask )
 	}
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::RunTask( const Task_t *pTask )
 {
 	switch( pTask->iTask )
@@ -1460,8 +1300,7 @@ void CNPC_PlayerCompanion::RunTask( const Task_t *pTask )
 		case TASK_PC_FACE_TOSS_DIR:
 			RunTask_FaceTossDir( pTask );
 			break;
-#endif
-
+#endif // MAPBASE
 		default:
 			BaseClass::RunTask( pTask );
 			break;
@@ -1561,7 +1400,6 @@ void CNPC_PlayerCompanion::PrepareReadinessRemap( void )
 						ActRemap.m_bInVehicle = false;
 					}
 				}
-
 				pKey = pKey->GetNextKey();
 			}
 		}
@@ -1572,14 +1410,10 @@ void CNPC_PlayerCompanion::PrepareReadinessRemap( void )
 		{
 			AddActivityToSR( pActName, (int)ActRemap.mappedActivity );
 		}
-
 		m_activityMappings.AddToTail( ActRemap );
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::Activate( void )
 {
 	BaseClass::Activate();
@@ -1655,13 +1489,11 @@ Activity CNPC_PlayerCompanion::TranslateActivityReadiness( Activity activity )
 				else
 					break;
 			}
-#endif
-
+#endif // MAPBASE
 			// We've successfully passed all criteria for remapping this 
 			return actremap.mappedActivity;
 		}
 	}
-
 	return activity;
 }
 
@@ -1697,8 +1529,7 @@ Activity CNPC_PlayerCompanion::NPC_TranslateActivity( Activity activity )
 	{
 		activity = ACT_COMBINE_THROW_GRENADE;
 	}
-#endif
-
+#endif // MAPBASE
 	return TranslateActivityReadiness( activity );
 }
 
@@ -1777,7 +1608,7 @@ void CNPC_PlayerCompanion::HandleAnimEvent( animevent_t *pEvent )
 #else
 			GetActiveWeapon()->WeaponSound( RELOAD_NPC );
 			GetActiveWeapon()->m_iClip1 = GetActiveWeapon()->GetMaxClip1(); 
-#endif
+#endif // MAPBASE
 			ClearCondition(COND_LOW_PRIMARY_AMMO);
 			ClearCondition(COND_NO_PRIMARY_AMMO);
 			ClearCondition(COND_NO_SECONDARY_AMMO);
@@ -1809,7 +1640,6 @@ void CNPC_PlayerCompanion::HandleAnimEvent( animevent_t *pEvent )
 			break;
 		}
 #endif
-
 	default:
 		BaseClass::HandleAnimEvent( pEvent );
 		break;
@@ -1834,27 +1664,27 @@ bool CNPC_PlayerCompanion::HandleInteraction(int interactionType, void *data, CB
 		}
 		return true;
 	}
-
 	return BaseClass::HandleInteraction( interactionType, data, sourceEnt );
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 int CNPC_PlayerCompanion::GetSoundInterests()
 {
 	return	SOUND_WORLD				|
 			SOUND_COMBAT			|
 			SOUND_PLAYER			|
 			SOUND_DANGER			|
+			SOUND_PHYSICS_DANGER	|
 			SOUND_BULLET_IMPACT		|
+			SOUND_CARCASS			|
+			SOUND_MEAT				|
+			SOUND_GARBAGE			|
+			SOUND_BUGBAIT			|
 			SOUND_MOVE_AWAY			|
 			SOUND_READINESS_LOW		|
 			SOUND_READINESS_MEDIUM	|
 			SOUND_READINESS_HIGH;
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 void CNPC_PlayerCompanion::Touch( CBaseEntity *pOther )
 {
 	BaseClass::Touch( pOther );
@@ -1870,8 +1700,6 @@ void CNPC_PlayerCompanion::Touch( CBaseEntity *pOther )
 	}
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::ModifyOrAppendCriteria( AI_CriteriaSet& set )
 {
 	BaseClass::ModifyOrAppendCriteria( set );
@@ -1898,7 +1726,7 @@ void CNPC_PlayerCompanion::ModifyOrAppendCriteria( AI_CriteriaSet& set )
 		}
 	}
 	set.AppendCriteria( "num_enemies", UTIL_VarArgs( "%d", iNumEnemies ) );
-#endif
+#endif // MAPBASE
 
 	if ( m_bReadinessCapable )
 	{
@@ -1927,8 +1755,6 @@ void CNPC_PlayerCompanion::ModifyOrAppendCriteria( AI_CriteriaSet& set )
 	}
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::IsReadinessCapable()
 {
 	if ( GlobalEntity_GetState("gordon_precriminal") == GLOBAL_ON )
@@ -1939,14 +1765,14 @@ bool CNPC_PlayerCompanion::IsReadinessCapable()
 	// citizens in ep1_c17_05 (sjb)
 	if( !GetActiveWeapon() )
 		return false;
-#endif
+#endif // HL2_EPISODIC
 
 #ifdef MAPBASE
 #ifdef HL2_EPISODIC
 	if (GetActiveWeapon())
 #else
 	// We already know we have a weapon due to the check above
-#endif
+#endif // HL2_EPISODIC
 	{
 		// Rather than looking up the activity string, we just make sure our weapon accepts a few basic readiness activity overrides.
 		// This lets us make sure our weapon is readiness-capable to begin with.
@@ -1967,13 +1793,10 @@ bool CNPC_PlayerCompanion::IsReadinessCapable()
 
 	if( GetActiveWeapon() && FClassnameIs( GetActiveWeapon(), "weapon_rpg" ) )
 		return false;
-#endif
-
+#endif // MAPBASE
 	return true;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::AddReadiness( float flAdd, bool bOverrideLock )
 {
 	if( IsReadinessLocked() && !bOverrideLock )
@@ -1982,8 +1805,6 @@ void CNPC_PlayerCompanion::AddReadiness( float flAdd, bool bOverrideLock )
 	SetReadinessValue( GetReadinessValue() + flAdd );
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::SubtractReadiness( float flSub, bool bOverrideLock )
 {
  	if( IsReadinessLocked() && !bOverrideLock )
@@ -2080,8 +1901,6 @@ void CNPC_PlayerCompanion::SetReadinessLevel( int iLevel, bool bOverrideLock, bo
 	}
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 int	CNPC_PlayerCompanion::GetReadinessLevel()
 {
 	if ( m_bReadinessCapable == false )
@@ -2106,12 +1925,9 @@ int	CNPC_PlayerCompanion::GetReadinessLevel()
 	{
 		return AIRL_STIMULATED;
 	}
-
 	return AIRL_AGITATED;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::UpdateReadiness()
 {
 	// Only update readiness if it's not in a scripted state
@@ -2179,8 +1995,6 @@ void CNPC_PlayerCompanion::UpdateReadiness()
 	}
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 float CNPC_PlayerCompanion::GetReadinessDecay()
 {
 	return ai_readiness_decay.GetFloat();
@@ -2220,8 +2034,6 @@ void CNPC_PlayerCompanion::SetAimTarget( CBaseEntity *pTarget )
 #endif
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::StopAiming( char *pszReason )
 {
 #if 0
@@ -2240,8 +2052,6 @@ void CNPC_PlayerCompanion::StopAiming( char *pszReason )
 	}
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 #define COMPANION_MAX_LOOK_TIME	3.0f
 #define COMPANION_MIN_LOOK_TIME	1.0f
 #define COMPANION_MAX_TACTICAL_TARGET_DIST	1800.0f // 150 feet
@@ -2317,7 +2127,6 @@ bool CNPC_PlayerCompanion::PickTacticalLookTarget( AILookTargetArgs_t *pArgs )
 		}
 		return true;
 	}
-
 	// See what the base class thinks.
 	return BaseClass::PickTacticalLookTarget( pArgs );
 }
@@ -2370,13 +2179,10 @@ bool CNPC_PlayerCompanion::FindNewAimTarget()
 			return true;
 		}
 	}
-
 	// Didn't find an aim target, or found the same one.
 	return false;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::OnNewLookTarget()
 {
 	if( ai_new_aiming.GetBool() )
@@ -2424,14 +2230,11 @@ void CNPC_PlayerCompanion::OnNewLookTarget()
 				// No LOS
 				return;
 			}
-
 			SetAimTarget( GetLooktarget() );
 		}
 	}
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::ShouldBeAiming() 
 {
 	if( !IsAllowedToAim() )
@@ -2448,12 +2251,9 @@ bool CNPC_PlayerCompanion::ShouldBeAiming()
 	{
 		return false;
 	}
-
 	return true;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 #define PC_MAX_ALLOWED_AIM	2
 bool CNPC_PlayerCompanion::IsAllowedToAim()
 {
@@ -2484,12 +2284,9 @@ bool CNPC_PlayerCompanion::IsAllowedToAim()
 	{
 		return true;
 	}
-
 	return false;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::HasAimLOS( CBaseEntity *pAimTarget )
 {
 	trace_t tr;
@@ -2499,12 +2296,9 @@ bool CNPC_PlayerCompanion::HasAimLOS( CBaseEntity *pAimTarget )
 	{
 		return false;
 	}
-
 	return true;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::AimGun()
 {
 	Vector vecAimDir;
@@ -2577,24 +2371,18 @@ void CNPC_PlayerCompanion::AimGun()
 			}
 		}
 	}
-
 	BaseClass::AimGun();
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 CBaseEntity *CNPC_PlayerCompanion::GetAlternateMoveShootTarget()
 {
 	if( GetAimTarget() && !GetAimTarget()->IsNPC() && GetReadinessLevel() != AIRL_RELAXED )
 	{
 		return GetAimTarget();
 	}
-
 	return BaseClass::GetAlternateMoveShootTarget();
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::IsValidEnemy( CBaseEntity *pEnemy )
 {
 	if ( GetFollowBehavior().GetFollowTarget() && GetFollowBehavior().GetFollowTarget()->IsPlayer() && IsSniper( pEnemy ) )
@@ -2609,12 +2397,9 @@ bool CNPC_PlayerCompanion::IsValidEnemy( CBaseEntity *pEnemy )
 			}
 		}
 	}
-
 	return BaseClass::IsValidEnemy( pEnemy );
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::IsSafeFromFloorTurret( const Vector &vecLocation, CBaseEntity *pTurret )
 {
 	float dist = ( vecLocation - pTurret->EyePosition() ).LengthSqr();
@@ -2636,15 +2421,11 @@ bool CNPC_PlayerCompanion::IsSafeFromFloorTurret( const Vector &vecLocation, CBa
 	return false;
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::ShouldMoveAndShoot( void )
 {
 	return BaseClass::ShouldMoveAndShoot();
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 #define PC_LARGER_BURST_RANGE	(12.0f * 10.0f) // If an enemy is this close, player companions fire larger continuous bursts.
 void CNPC_PlayerCompanion::OnUpdateShotRegulator()
 {
@@ -2691,23 +2472,19 @@ Vector CNPC_PlayerCompanion::GetActualShootPosition( const Vector &shootOrigin )
 	{
 		return GetEnemy()->HeadTarget( shootOrigin );
 	}
-
 	return BaseClass::GetActualShootPosition( shootOrigin );
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 WeaponProficiency_t CNPC_PlayerCompanion::CalcWeaponProficiency( CBaseCombatWeapon *pWeapon )
 {
 #ifdef MAPBASE
 	if ( EntIsClass(pWeapon, gm_iszAR2Classname) )
 #else
 	if( FClassnameIs( pWeapon, "weapon_ar2" ) )
-#endif
+#endif // MAPBASE
 	{
 		return WEAPON_PROFICIENCY_VERY_GOOD;
 	}
-
 	return WEAPON_PROFICIENCY_PERFECT;
 }
 
@@ -2724,7 +2501,7 @@ bool CNPC_PlayerCompanion::Weapon_CanUse( CBaseCombatWeapon *pWeapon )
 		if (EntIsClass(pWeapon, gm_iszShotgunClassname))
 #else
 		if( pWeapon->ClassMatches( gm_iszShotgunClassname ) )
-#endif
+#endif // MAPBASE
 		{
 			return (NumWeaponsInSquad("weapon_shotgun") < 1 );
 		}
@@ -2734,18 +2511,15 @@ bool CNPC_PlayerCompanion::Weapon_CanUse( CBaseCombatWeapon *pWeapon )
 			// The AI automatically detects these weapons as usable now that there's animations for them, so ensure this behavior can be toggled in situations where that's not desirable
 			return ai_allow_new_weapons.GetBool();
 		}
-#endif
+#endif // MAPBASE
 		else
 		{
 			return true;
 		}
 	}
-
 	return false;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::ShouldLookForBetterWeapon()
 {
 	if ( m_bDontPickupWeapons )
@@ -2758,13 +2532,10 @@ bool CNPC_PlayerCompanion::ShouldLookForBetterWeapon()
 	// Don't look for a new weapon if we have secondary ammo for our current one.
 	if (m_iNumGrenades > 0 && IsAltFireCapable() && GetActiveWeapon() && GetActiveWeapon()->UsesSecondaryAmmo())
 		return false;
-#endif
-
+#endif // MAPBASE
 	return BaseClass::ShouldLookForBetterWeapon();
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::Weapon_Equip( CBaseCombatWeapon *pWeapon )
 {
 	BaseClass::Weapon_Equip( pWeapon );
@@ -2772,8 +2543,6 @@ void CNPC_PlayerCompanion::Weapon_Equip( CBaseCombatWeapon *pWeapon )
 }
 
 #ifdef MAPBASE
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::DoUnholster()
 {
 	if ( BaseClass::DoUnholster() )
@@ -2781,13 +2550,10 @@ bool CNPC_PlayerCompanion::DoUnholster()
 		m_bReadinessCapable = IsReadinessCapable();
 		return true;
 	}
-
 	return false;
 }
-#endif
+#endif // MAPBASE
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 void CNPC_PlayerCompanion::PickupWeapon( CBaseCombatWeapon *pWeapon )
 {
 	BaseClass::PickupWeapon( pWeapon );
@@ -2799,7 +2565,7 @@ void CNPC_PlayerCompanion::PickupWeapon( CBaseCombatWeapon *pWeapon )
 #else
 	SpeakIfAllowed( TLK_NEWWEAPON );
 	m_OnWeaponPickup.FireOutput( this, this );
-#endif
+#endif // MAPBASE
 }
 
 #if COMPANION_MELEE_ATTACK
@@ -2821,14 +2587,11 @@ bool CNPC_PlayerCompanion::KeyValue( const char *szKeyName, const char *szValue 
 
 		return true;
 	}
-
 	return BaseClass::KeyValue( szKeyName, szValue );
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: For unused citizen melee attack (vorts might use this too)
-// Input  :
-// Output :
 //-----------------------------------------------------------------------------
 int CNPC_PlayerCompanion::MeleeAttack1Conditions ( float flDot, float flDist )
 {
@@ -2879,15 +2642,10 @@ int CNPC_PlayerCompanion::MeleeAttack1Conditions ( float flDot, float flDist )
 }
 #endif
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
 const int MAX_NON_SPECIAL_MULTICOVER = 2;
 
 CUtlVector<AI_EnemyInfo_t *>	g_MultiCoverSearchEnemies;
 CNPC_PlayerCompanion *			g_pMultiCoverSearcher;
-
-//-------------------------------------
 
 int __cdecl MultiCoverCompare( AI_EnemyInfo_t * const *ppLeft, AI_EnemyInfo_t * const *ppRight )
 {
@@ -2944,8 +2702,6 @@ int __cdecl MultiCoverCompare( AI_EnemyInfo_t * const *ppLeft, AI_EnemyInfo_t * 
 	return 0;
 }
 
-//-------------------------------------
-
 void CNPC_PlayerCompanion::SetupCoverSearch( CBaseEntity *pEntity )
 {
 	if ( IsTurret( pEntity ) )
@@ -2993,16 +2749,12 @@ void CNPC_PlayerCompanion::SetupCoverSearch( CBaseEntity *pEntity )
 	}
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::CleanupCoverSearch()
 {
 	gm_fCoverSearchType = CT_NORMAL;
 	g_MultiCoverSearchEnemies.RemoveAll();
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::FindCoverPos( CBaseEntity *pEntity, Vector *pResult)
 {
 	AI_PROFILE_SCOPE(CNPC_PlayerCompanion_FindCoverPos);
@@ -3026,9 +2778,6 @@ bool CNPC_PlayerCompanion::FindCoverPos( CBaseEntity *pEntity, Vector *pResult)
 
 	return result;
 }
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 
 bool CNPC_PlayerCompanion::FindCoverPosInRadius( CBaseEntity *pEntity, const Vector &goalPos, float coverRadius, Vector *pResult )
 {
@@ -3055,9 +2804,6 @@ bool CNPC_PlayerCompanion::FindCoverPosInRadius( CBaseEntity *pEntity, const Vec
 
 	return result;
 }
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 
 bool CNPC_PlayerCompanion::FindCoverPos( CSound *pSound, Vector *pResult )
 {
@@ -3086,9 +2832,6 @@ bool CNPC_PlayerCompanion::FindCoverPos( CSound *pSound, Vector *pResult )
 	return result;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
 bool CNPC_PlayerCompanion::FindMortarCoverPos( CSound *pSound, Vector *pResult )
 {
 	bool result = false;
@@ -3109,8 +2852,6 @@ bool CNPC_PlayerCompanion::FindMortarCoverPos( CSound *pSound, Vector *pResult )
 	return result;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::IsCoverPosition( const Vector &vecThreat, const Vector &vecPosition )
 {
 	if ( gm_bFindingCoverFromAllEnemies )
@@ -3141,7 +2882,6 @@ bool CNPC_PlayerCompanion::IsCoverPosition( const Vector &vecThreat, const Vecto
 
 		if ( gm_fCoverSearchType != CT_MORTAR &&  GetEnemy() && vecThreat.DistToSqr( GetEnemy()->EyePosition() ) < 1 )
 			return true;
-
 		// else fall through
 	}
 
@@ -3174,12 +2914,9 @@ bool CNPC_PlayerCompanion::IsCoverPosition( const Vector &vecThreat, const Vecto
 			}
 		}
 	}
-
 	return BaseClass::IsCoverPosition( vecThreat, vecPosition );
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::IsMortar( CBaseEntity *pEntity )
 {
 	if ( !pEntity )
@@ -3188,8 +2925,6 @@ bool CNPC_PlayerCompanion::IsMortar( CBaseEntity *pEntity )
 	return ( pEntityParent && pEntityParent->GetClassname() == STRING(gm_iszMortarClassname) );
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::IsSniper( CBaseEntity *pEntity )
 {
 	if ( !pEntity )
@@ -3197,8 +2932,6 @@ bool CNPC_PlayerCompanion::IsSniper( CBaseEntity *pEntity )
 	return ( pEntity->Classify() == CLASS_PROTOSNIPER );
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::IsTurret( CBaseEntity *pEntity )
 {
 	if ( !pEntity )
@@ -3207,8 +2940,6 @@ bool CNPC_PlayerCompanion::IsTurret( CBaseEntity *pEntity )
 	return ( pszClassname == STRING(gm_iszFloorTurretClassname) || pszClassname == STRING(gm_iszGroundTurretClassname) );
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::IsGunship( CBaseEntity *pEntity )
 {
 	if( !pEntity )
@@ -3216,16 +2947,19 @@ bool CNPC_PlayerCompanion::IsGunship( CBaseEntity *pEntity )
 	return (pEntity->Classify() == CLASS_COMBINE_GUNSHIP );
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-int CNPC_PlayerCompanion::OnTakeDamage_Alive( const CTakeDamageInfo &info )
+CBaseEntity *CNPC_PlayerCompanion::FindNearestFriend(bool fPlayer)
 {
-	if( info.GetAttacker() )
+	return FindSpeechTarget( (fPlayer) ? AIST_PLAYERS : AIST_NPCS );
+}
+
+int CNPC_PlayerCompanion::OnTakeDamage_Alive(const CTakeDamageInfo& inputInfo)
+{
+	if( inputInfo.GetAttacker() )
 	{
 		bool bIsEnvFire;
-		if( ( bIsEnvFire = FClassnameIs( info.GetAttacker(), "env_fire" ) ) != false || FClassnameIs( info.GetAttacker(), "entityflame" ) || FClassnameIs( info.GetAttacker(), "env_entity_igniter" ) )
+		if( ( bIsEnvFire = FClassnameIs( inputInfo.GetAttacker(), "env_fire" ) ) != false || FClassnameIs( inputInfo.GetAttacker(), "entityflame" ) || FClassnameIs( inputInfo.GetAttacker(), "env_entity_igniter" ) )
 		{
-			GetMotor()->SetIdealYawToTarget( info.GetAttacker()->GetAbsOrigin() );
+			GetMotor()->SetIdealYawToTarget( inputInfo.GetAttacker()->GetAbsOrigin() );
 			SetCondition( COND_PC_HURTBYFIRE );
 		}
 
@@ -3239,18 +2973,183 @@ int CNPC_PlayerCompanion::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 		//						  npc clipped, this latter case should be rare.
 		if ( bIsEnvFire )
 		{
-			if ( ( GetAbsOrigin() - info.GetAttacker()->GetAbsOrigin() ).Length2DSqr() > Square(12 + GetHullWidth() * .5 ) )
+			if ( ( GetAbsOrigin() - inputInfo.GetAttacker()->GetAbsOrigin() ).Length2DSqr() > Square(12 + GetHullWidth() * .5 ) )
 			{
 				return 0;
 			}
 		}
 	}
 
-	return BaseClass::OnTakeDamage_Alive( info );
+	// The Friendly NPC is a alive?
+	if (IsAlive())
+	{
+		// If the player harms a friendly NPC infront of their friend, Tell the player to knock it off!
+		if (inputInfo.GetAttacker() && FBitSet(inputInfo.GetAttacker()->GetFlags(), FL_CLIENT) && HasCondition(COND_SEE_PLAYER))
+		{
+			CBaseEntity* pFriend = FindNearestFriend(FALSE);
+			// Are their friends alive? Yes? Then fire this.
+			if (pFriend && pFriend->IsAlive())
+			{
+				CNPC_PlayerCompanion* pTalkNPC = (CNPC_PlayerCompanion*)pFriend;
+				pTalkNPC->Speak( TLK_BETRAYED );
+				DevMsg("**\nPLAYER ATTACKED FRIEND!\n**\n");
+			}
+		}
+	}
+	return BaseClass::OnTakeDamage_Alive( inputInfo );
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
+CBaseEntity	*CNPC_PlayerCompanion::EnumFriends( CBaseEntity *pPrevious, int listNumber, bool bTrace )
+{
+	CBaseEntity *pFriend = pPrevious;
+	char *pszFriend;
+	trace_t tr;
+	Vector vecCheck;
+
+	pszFriend = pszNPCFriendsName[ FriendNumber(listNumber) ];
+	while ( pszFriend != NULL && ((pFriend = gEntList.FindEntityByClassname( pFriend, pszFriend )) != NULL) )
+	{
+		if (pFriend == this || !pFriend->IsAlive())
+			// don't talk to self or dead people
+			continue;
+
+		if ( bTrace )
+		{
+			Vector vecCheck;
+			pFriend->CollisionProp()->NormalizedToWorldSpace( Vector( 0.5f, 0.5f, 1.0f ), &vecCheck );
+			UTIL_TraceLine( GetAbsOrigin(), vecCheck, MASK_SOLID_BRUSHONLY, this, COLLISION_GROUP_NONE, &tr);
+		}
+		else
+		{
+			tr.fraction = 1.0;
+		}
+
+		if (tr.fraction == 1.0)
+		{
+			return pFriend;
+		}
+	}
+	return NULL;
+}
+
+void CNPC_PlayerCompanion::AlertFriends( CBaseEntity *pKiller )
+{
+	CBaseEntity *pFriend = NULL;
+	int i;
+
+	// for each friend in this bsp...
+	for ( i = 0; i < 4; i++ )
+	{
+		while ((pFriend = EnumFriends( pFriend, i, true )) != NULL )
+		{
+			CAI_BaseNPC *pNPC = pFriend->MyNPCPointer();
+			if ( pNPC->IsAlive() )
+			{
+				// If a client killed me, make everyone else mad/afraid of him
+				if ( pKiller->GetFlags() & FL_CLIENT )
+				{
+					CNPC_PlayerCompanion*pTalkNPC = (CNPC_PlayerCompanion *)pFriend;
+
+					if (pTalkNPC && pTalkNPC->IsOkToCombatSpeak())
+					{
+						// FIXME: need to check CanSpeakConcept?
+						pTalkNPC->Speak( TLK_BETRAYED );
+					}
+				}
+				else
+				{
+					if( IRelationType(pKiller) == D_HT)
+					{
+						// Killed by an enemy!!!
+						CNPC_PlayerCompanion *pAlly = (CNPC_PlayerCompanion *)pNPC;
+						
+						if( pAlly && pAlly->GetExpresser()->CanSpeakConcept( TLK_ALLY_KILLED ) )
+						{
+							pAlly->Speak( TLK_ALLY_KILLED );
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void CNPC_PlayerCompanion::ShutUpFriends( void )
+{
+	CBaseEntity *pFriend = NULL;
+	int i;
+
+	// for each friend in this bsp...
+	for ( i = 0; i < 4; i++ )
+	{
+		while ((pFriend = EnumFriends( pFriend, i, true )) != NULL)
+		{
+			CAI_BaseNPC *pNPC = pFriend->MyNPCPointer();
+			if ( pNPC )
+			{
+				pNPC->SentenceStop();
+			}
+		}
+	}
+}
+
+void CNPC_PlayerCompanion::TellFriends(void)
+{
+	CBaseEntity* pFriend = NULL;
+	int i;
+
+	// for each friend in this bsp...
+	for (i = 0; i < 4; i++)
+	{
+		while ((pFriend = EnumFriends(pFriend, i, true)) != NULL)
+		{
+			CAI_BaseNPC* pNPC = pFriend->MyNPCPointer();
+			if (pNPC->IsAlive())
+			{
+				// don't provoke a friend that's playing a death animation. They're a goner
+				pNPC->Remember(bits_MEMORY_PROVOKED);
+			}
+		}
+	}
+}
+
+/*void CNPC_PlayerCompanion::StartFollowing(CBaseEntity* pLeader)
+{
+	if (!HasSpawnFlags(SF_NPC_GAG))
+	{
+		if (m_iszUse != NULL_STRING)
+		{
+			PlaySentence(STRING(m_iszUse), 0.0f);
+		}
+		else
+		{
+			Speak(TLK_STARTFOLLOW);
+		}
+		SetSpeechTarget(pLeader);
+	}
+	BaseClass::StartFollowing(pLeader);
+}
+
+void CNPC_PlayerCompanion::StopFollowing(void)
+{
+	if (!(m_afMemory & bits_MEMORY_PROVOKED))
+	{
+		if (!HasSpawnFlags(SF_NPC_GAG))
+		{
+			if (m_iszUnUse != NULL_STRING)
+			{
+				PlaySentence(STRING(m_iszUnUse), 0.0f);
+			}
+			else
+			{
+				Speak(TLK_STOPFOLLOW);
+			}
+			SetSpeechTarget(GetFollowTarget());
+		}
+	}
+	BaseClass::StopFollowing();
+}*/
+
 void CNPC_PlayerCompanion::OnFriendDamaged( CBaseCombatCharacter *pSquadmate, CBaseEntity *pAttackerEnt )
 {
 	AI_PROFILE_SCOPE( CNPC_PlayerCompanion_OnFriendDamaged );
@@ -3303,8 +3202,6 @@ void CNPC_PlayerCompanion::OnFriendDamaged( CBaseCombatCharacter *pSquadmate, CB
 	}
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::IsValidMoveAwayDest( const Vector &vecDest )
 {
 	// Don't care what the destination is unless I have an enemy and 
@@ -3323,12 +3220,9 @@ bool CNPC_PlayerCompanion::IsValidMoveAwayDest( const Vector &vecDest )
 	{
 		return true;
 	}
-
 	return false;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::FValidateHintType( CAI_Hint *pHint )
 {
 	switch( pHint->HintType() )
@@ -3343,12 +3237,9 @@ bool CNPC_PlayerCompanion::FValidateHintType( CAI_Hint *pHint )
 	default:
 		break;
 	}
-
 	return BaseClass::FValidateHintType( pHint );
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::ValidateNavGoal()
 {
 	bool result;
@@ -3364,8 +3255,6 @@ bool CNPC_PlayerCompanion::ValidateNavGoal()
 
 const float AVOID_TEST_DIST = 18.0f*12.0f;
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 #define COMPANION_EPISODIC_AVOID_ENTITY_FLAME_RADIUS	18.0f
 bool CNPC_PlayerCompanion::OverrideMove( float flInterval )
 {
@@ -3377,7 +3266,7 @@ bool CNPC_PlayerCompanion::OverrideMove( float flInterval )
 		#define iszEnvFire gm_isz_class_EnvFire
 #else
 		string_t iszEnvFire = AllocPooledString( "env_fire" );
-#endif
+#endif // MAPBASE
 		string_t iszBounceBomb = AllocPooledString( "combine_mine" );
 
 #ifdef HL2_EPISODIC			
@@ -3385,7 +3274,7 @@ bool CNPC_PlayerCompanion::OverrideMove( float flInterval )
 		#define iszNPCTurretFloor gm_isz_class_FloorTurret
 #else
 		string_t iszNPCTurretFloor = AllocPooledString( "npc_turret_floor" );
-#endif
+#endif // MAPBASE
 		string_t iszEntityFlame = AllocPooledString( "entityflame" );
 #endif // HL2_EPISODIC
 
@@ -3458,14 +3347,9 @@ bool CNPC_PlayerCompanion::OverrideMove( float flInterval )
 			}
 		}
 	}
-
 	return overrode;
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::MovementCost( int moveType, const Vector &vecStart, const Vector &vecEnd, float *pCost )
 {
 	bool bResult = BaseClass::MovementCost( moveType, vecStart, vecEnd, pCost );
@@ -3501,8 +3385,6 @@ bool CNPC_PlayerCompanion::MovementCost( int moveType, const Vector &vecStart, c
 	return bResult;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 float CNPC_PlayerCompanion::GetIdealSpeed() const
 {
 	float baseSpeed = BaseClass::GetIdealSpeed();
@@ -3513,8 +3395,6 @@ float CNPC_PlayerCompanion::GetIdealSpeed() const
 	return baseSpeed;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 float CNPC_PlayerCompanion::GetIdealAccel() const
 {
 	float multiplier = 1.0;
@@ -3526,8 +3406,6 @@ float CNPC_PlayerCompanion::GetIdealAccel() const
 	return BaseClass::GetIdealAccel() * multiplier;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::OnObstructionPreSteer( AILocalMoveGoal_t *pMoveGoal, float distClear, AIMoveResult_t *pResult )
 {
 	if ( pMoveGoal->directTrace.flTotalDist - pMoveGoal->directTrace.flDistObstructed < GetHullWidth() * 1.5 )
@@ -3553,9 +3431,7 @@ bool CNPC_PlayerCompanion::OnObstructionPreSteer( AILocalMoveGoal_t *pMoveGoal, 
 		}
 	}
 
-	if ( pMoveGoal->directTrace.pObstruction )
-	{
-	}
+	if ( pMoveGoal->directTrace.pObstruction ){}
 
 	return BaseClass::OnObstructionPreSteer( pMoveGoal, distClear, pResult );
 }
@@ -3581,8 +3457,6 @@ bool CNPC_PlayerCompanion::ShouldAlwaysTransition( void )
 	return false;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::InputOutsideTransition( inputdata_t &inputdata )
 {
 	if ( !AI_IsSinglePlayer() )
@@ -3688,47 +3562,34 @@ void CNPC_PlayerCompanion::InputOutsideTransition( inputdata_t &inputdata )
 	{
 		DevMsg( 2, "NPC \"%s\" failed to find a suitable transition a point\n", STRING(GetEntityName()) );
 	}
-
 	BaseClass::InputOutsideTransition( inputdata );
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 void CNPC_PlayerCompanion::InputSetReadinessPanic( inputdata_t &inputdata )
 {
 	SetReadinessLevel( AIRL_PANIC, true, true );
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 void CNPC_PlayerCompanion::InputSetReadinessStealth( inputdata_t &inputdata )
 {
 	SetReadinessLevel( AIRL_STEALTH, true, true );
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 void CNPC_PlayerCompanion::InputSetReadinessLow( inputdata_t &inputdata )
 {
 	SetReadinessLevel( AIRL_RELAXED, true, true );
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 void CNPC_PlayerCompanion::InputSetReadinessMedium( inputdata_t &inputdata )
 {
 	SetReadinessLevel( AIRL_STIMULATED, true, true );
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 void CNPC_PlayerCompanion::InputSetReadinessHigh( inputdata_t &inputdata )
 {
 	SetReadinessLevel( AIRL_AGITATED, true, true );
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 void CNPC_PlayerCompanion::InputLockReadiness( inputdata_t &inputdata )
 {
 	float value = inputdata.value.Float();
@@ -3760,11 +3621,8 @@ void CNPC_PlayerCompanion::UnlockReadiness( void )
 	m_flReadinessLockedUntil = gpGlobals->curtime - 0.1f;
 }
 
-//------------------------------------------------------------------------------
 #ifdef HL2_EPISODIC
-
 //-----------------------------------------------------------------------------
-// Purpose: 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::ShouldDeferToPassengerBehavior( void )
@@ -3785,7 +3643,6 @@ bool CNPC_PlayerCompanion::CanEnterVehicle( void )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::CanExitVehicle( void )
@@ -3799,7 +3656,6 @@ bool CNPC_PlayerCompanion::CanExitVehicle( void )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
 // Input  : *lpszVehicleName - 
 //-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::EnterVehicle( CBaseEntity *pEntityVehicle, bool bImmediately )
@@ -3846,9 +3702,6 @@ void CNPC_PlayerCompanion::InputEnterVehicleImmediately( inputdata_t &inputdata 
 	EnterVehicle( pEntity, true );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::InputExitVehicle( inputdata_t &inputdata )
 {
 	// See if we're allowed to exit the vehicle
@@ -3858,10 +3711,6 @@ void CNPC_PlayerCompanion::InputExitVehicle( inputdata_t &inputdata )
 	m_PassengerBehavior.ExitVehicle();
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : &inputdata - 
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::InputCancelEnterVehicle( inputdata_t &inputdata )
 {
 	m_PassengerBehavior.CancelEnterVehicle();
@@ -3880,7 +3729,6 @@ bool CNPC_PlayerCompanion::ExitVehicle( void )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::IsInAVehicle( void ) const
@@ -3893,7 +3741,6 @@ bool CNPC_PlayerCompanion::IsInAVehicle( void ) const
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
 // Output : IServerVehicle - 
 //-----------------------------------------------------------------------------
 IServerVehicle *CNPC_PlayerCompanion::GetVehicle( void )
@@ -3904,14 +3751,9 @@ IServerVehicle *CNPC_PlayerCompanion::GetVehicle( void )
 		if ( pDriveableVehicle != NULL )
 			return pDriveableVehicle->GetServerVehicle();
 	}
-
 	return NULL;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : CBaseEntity
-//-----------------------------------------------------------------------------
 CBaseEntity *CNPC_PlayerCompanion::GetVehicleEntity( void )
 {
 	if ( IsInAVehicle() )
@@ -3919,7 +3761,6 @@ CBaseEntity *CNPC_PlayerCompanion::GetVehicleEntity( void )
 		CPropVehicleDriveable *pDriveableVehicle = m_PassengerBehavior.GetTargetVehicle();
 			return pDriveableVehicle;
 	}
-
 	return NULL;
 }
 
@@ -3940,9 +3781,7 @@ void CNPC_PlayerCompanion::UpdateEfficiency( bool bInPVS )
 			return;
 		}
 	}
-
-	// Do the default behavior
-	BaseClass::UpdateEfficiency( bInPVS );
+	BaseClass::UpdateEfficiency( bInPVS ); // Do the default behavior
 }
 
 //-----------------------------------------------------------------------------
@@ -3957,9 +3796,6 @@ bool CNPC_PlayerCompanion::CanRunAScriptedNPCInteraction( bool bForced /*= false
 	return BaseClass::CanRunAScriptedNPCInteraction( bForced );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::IsAllowedToDodge( void )
 {
 	// TODO: Allow this but only for interactions who stem from being in a vehicle?
@@ -3968,9 +3804,7 @@ bool CNPC_PlayerCompanion::IsAllowedToDodge( void )
 
 	return BaseClass::IsAllowedToDodge();
 }
-
 #endif	//HL2_EPISODIC
-//------------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // Purpose: Always transition along with the player
@@ -4024,7 +3858,7 @@ void CNPC_PlayerCompanion::InputGiveWeapon( inputdata_t &inputdata )
 		}
 	}
 }
-#endif
+#endif // MAPBASE
 
 #if HL2_EPISODIC
 //------------------------------------------------------------------------------
@@ -4043,20 +3877,12 @@ void CNPC_PlayerCompanion::InputClearAllOuputs( inputdata_t &inputdata )
 			{
 				CBaseEntityOutput *pOutput = (CBaseEntityOutput *)((int)this + (int)dataDesc->fieldOffset[0]);
 				pOutput->DeleteAllElements();
-				/*
-				int nConnections = pOutput->NumberOfElements();
-				for ( int j = 0; j < nConnections; j++ )
-				{
-
-				}
-				*/
 			}
 		}
-
 		dmap = dmap->baseMap;
 	}
 }
-#endif
+#endif // HL2_EPISODIC
 
 //-----------------------------------------------------------------------------
 // Purpose: Player in our squad killed something
@@ -4084,7 +3910,7 @@ void CNPC_PlayerCompanion::OnPlayerKilledOther( CBaseEntity *pVictim, const CTak
 	bool	bVictimWasAttacker = false;
 	bool	bHeadshot = false;
 	bool	bOneShot = false;
-#endif
+#endif // MAPBASE
 
 	if ( dynamic_cast<CBreakableProp *>( pInflictor ) && ( info.GetDamageType() & DMG_BLAST ) )
 	{
@@ -4101,7 +3927,7 @@ void CNPC_PlayerCompanion::OnPlayerKilledOther( CBaseEntity *pVictim, const CTak
 		modifiers.AppendCriteria( "num_barrels", UTIL_VarArgs("%i", m_iNumConsecutiveBarrelsExploded) );
 #else
 		iNumBarrels = m_iNumConsecutiveBarrelsExploded;
-#endif
+#endif // MAPBASE
 	}
 	else
 	{
@@ -4117,7 +3943,7 @@ void CNPC_PlayerCompanion::OnPlayerKilledOther( CBaseEntity *pVictim, const CTak
 		modifiers.AppendCriteria( "consecutive_player_kills", UTIL_VarArgs("%i", m_iNumConsecutivePlayerKills) );
 #else
 		iConsecutivePlayerKills = m_iNumConsecutivePlayerKills;
-#endif
+#endif // MAPBASE
 	}
 
 	// don't comment on kills when she can't see the victim
@@ -4134,7 +3960,7 @@ void CNPC_PlayerCompanion::OnPlayerKilledOther( CBaseEntity *pVictim, const CTak
 	{
 		bPuntedGrenade = true;
 	}
-#endif
+#endif // MAPBASE
 
 	// check if the victim was Alyx's enemy
 #ifdef MAPBASE
@@ -4144,7 +3970,7 @@ void CNPC_PlayerCompanion::OnPlayerKilledOther( CBaseEntity *pVictim, const CTak
 	{
 		bVictimWasEnemy = true;
 	}
-#endif
+#endif // MAPBASE
 
 	AI_EnemyInfo_t *pEMemory = GetEnemies()->Find( pVictim );
 	if ( pEMemory != NULL ) 
@@ -4160,7 +3986,7 @@ void CNPC_PlayerCompanion::OnPlayerKilledOther( CBaseEntity *pVictim, const CTak
 		if ( pEMemory->timeLastReceivedDamageFrom > 0 ) {
 			bVictimWasAttacker = true;
 		}
-#endif
+#endif // MAPBASE
 	}
 #ifdef MAPBASE
 	else
@@ -4168,7 +3994,7 @@ void CNPC_PlayerCompanion::OnPlayerKilledOther( CBaseEntity *pVictim, const CTak
 		modifiers.AppendCriteria( "victim_was_mob", "0" );
 		modifiers.AppendCriteria( "victim_was_attacker", "0" );
 	}
-#endif
+#endif // MAPBASE
 
 #ifdef MAPBASE
 	modifiers.AppendCriteria( "headshot", ((pCombatVictim->LastHitGroup() == HITGROUP_HEAD) && (info.GetDamageType() & DMG_BULLET)) ? "1" : "0" );
@@ -4185,7 +4011,7 @@ void CNPC_PlayerCompanion::OnPlayerKilledOther( CBaseEntity *pVictim, const CTak
 	{
 		bOneShot = true;
 	}
-#endif
+#endif // MAPBASE
 
 #ifdef MAPBASE
 	ModifyOrAppendEnemyCriteria(modifiers, pVictim);
@@ -4195,17 +4021,13 @@ void CNPC_PlayerCompanion::OnPlayerKilledOther( CBaseEntity *pVictim, const CTak
 		"punted_grenade:%d,victim_was_enemy:%d,victim_was_mob:%d,victim_was_attacker:%d,headshot:%d,oneshot:%d",
 		iNumBarrels, EnemyDistance( pVictim ), info.GetAmmoName(), iConsecutivePlayerKills,
 		bPuntedGrenade, bVictimWasEnemy, bVictimWasMob, bVictimWasAttacker, bHeadshot, bOneShot );
-#endif
+#endif // MAPBASE
 
 	SpeakIfAllowed( TLK_PLAYER_KILLED_NPC, modifiers );
-
 	BaseClass::OnPlayerKilledOther( pVictim, info );
 }
 
 #ifdef MAPBASE
-//-----------------------------------------------------------------------------
-// 
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::Event_Killed( const CTakeDamageInfo &info )
 {
 	// For now, allied player companions are set to always drop grenades and other items
@@ -4232,11 +4054,15 @@ void CNPC_PlayerCompanion::Event_Killed( const CTakeDamageInfo &info )
 		DropGrenadeItemsOnDeath( info, pPlayer );
 	}
 
+	// If the player kills a friendly NPC infront of their friend and they see it, 
+	// become hostile towards the player.
+	if (info.GetAttacker()->GetFlags() & FL_CLIENT && HasCondition(COND_SEE_PLAYER))
+	{
+		TellFriends(); // I'M TELLING EVERYONE
+	}
 	BaseClass::Event_Killed( info );
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CNPC_PlayerCompanion::Event_KilledOther( CBaseEntity *pVictim, const CTakeDamageInfo &info )
 {
 	BaseClass::Event_KilledOther( pVictim, info );
@@ -4377,10 +4203,8 @@ void CNPC_PlayerCompanion::DoCustomCombatAI( void )
 		}
 	}
 }
-#endif
+#endif // MAPBASE
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::IsNavigationUrgent( void )
 {
 	bool bBase = BaseClass::IsNavigationUrgent();
@@ -4400,27 +4224,21 @@ bool CNPC_PlayerCompanion::IsNavigationUrgent( void )
 		}
 
 		// If we're within the player's viewcone, then don't teleport.
-
 		// This test was made more general because previous iterations had cases where characters
 		// could not see the player but the player could in fact see them.  Now the NPC's facing is
 		// irrelevant and the player's viewcone is more authorative. -- jdw
-
 		CBasePlayer *pLocalPlayer = AI_GetSinglePlayer();
 		if ( pLocalPlayer->FInViewCone( EyePosition() ) )
 			return false;
 
 		return true;
 	}
-
 	return bBase;
 }
 
 //-----------------------------------------------------------------------------
-//
 // Schedules
-//
 //-----------------------------------------------------------------------------
-
 AI_BEGIN_CUSTOM_NPC( player_companion_base, CNPC_PlayerCompanion )
 
 	// AI Interaction for being hit by a physics object
@@ -4438,7 +4256,7 @@ AI_BEGIN_CUSTOM_NPC( player_companion_base, CNPC_PlayerCompanion )
 	DECLARE_TASK( TASK_PC_GET_PATH_TO_FORCED_GREN_LOS )
 	DECLARE_TASK( TASK_PC_DEFER_SQUAD_GRENADES )
 	DECLARE_TASK( TASK_PC_FACE_TOSS_DIR )
-#endif
+#endif // MAPBASE
 
 	DECLARE_ANIMEVENT( AE_COMPANION_PRODUCE_FLARE )
 	DECLARE_ANIMEVENT( AE_COMPANION_LIGHT_FLARE )
@@ -4446,7 +4264,7 @@ AI_BEGIN_CUSTOM_NPC( player_companion_base, CNPC_PlayerCompanion )
 #ifdef MAPBASE
 	DECLARE_ANIMEVENT( COMBINE_AE_BEGIN_ALTFIRE )
 	DECLARE_ANIMEVENT( COMBINE_AE_ALTFIRE )
-#endif
+#endif // MAPBASE
 
 	//=========================================================
 	// > TakeCoverFromBestSound
@@ -4512,9 +4330,6 @@ AI_BEGIN_CUSTOM_NPC( player_companion_base, CNPC_PlayerCompanion )
 		"		"
 	)
 
-	//=========================================================
-	//
-	//=========================================================
 	DEFINE_SCHEDULE
 	(
 		SCHED_PC_FLEE_FROM_BEST_SOUND,
@@ -4531,7 +4346,6 @@ AI_BEGIN_CUSTOM_NPC( player_companion_base, CNPC_PlayerCompanion )
 		"		COND_PC_SAFE_FROM_MORTAR"
 	)
 
-	//=========================================================
 	DEFINE_SCHEDULE
 	(
 		SCHED_PC_FAIL_TAKE_COVER_TURRET,
@@ -4548,7 +4362,6 @@ AI_BEGIN_CUSTOM_NPC( player_companion_base, CNPC_PlayerCompanion )
 		"		COND_NEW_ENEMY"
 	)
 
-	//=========================================================
 	DEFINE_SCHEDULE
 	(
 		SCHED_PC_FAKEOUT_MORTAR,
@@ -4562,7 +4375,6 @@ AI_BEGIN_CUSTOM_NPC( player_companion_base, CNPC_PlayerCompanion )
 		"		COND_HEAR_DANGER"
 	)
 
-	//=========================================================
 	DEFINE_SCHEDULE
 	(
 		SCHED_PC_GET_OFF_COMPANION,
@@ -4591,7 +4403,6 @@ AI_BEGIN_CUSTOM_NPC( player_companion_base, CNPC_PlayerCompanion )
 		"	Interrupts"
 		"		COND_NEW_ENEMY"
 		"		COND_ENEMY_DEAD"
-		//"		COND_LIGHT_DAMAGE"
 		"		COND_HEAVY_DAMAGE"
 		"		COND_ENEMY_OCCLUDED"
 	)
@@ -4675,21 +4486,15 @@ AI_BEGIN_CUSTOM_NPC( player_companion_base, CNPC_PlayerCompanion )
 	""
 	"	Interrupts"
 	)
-#endif
-
+#endif // MAPBASE
 AI_END_CUSTOM_NPC()
 
-
-//
 // Special movement overrides for player companions
-//
-
 #define NUM_OVERRIDE_MOVE_CLASSNAMES	4
 
 class COverrideMoveCache : public IEntityListener
 {
 public:
-
 	void LevelInitPreEntity( void )
 	{ 
 		CacheClassnames();
@@ -4826,4 +4631,3 @@ void OverrideMoveCache_LevelShutdownPostEntity( void )
 {
 	g_OverrideMoveCache.LevelShutdownPostEntity();
 }
-

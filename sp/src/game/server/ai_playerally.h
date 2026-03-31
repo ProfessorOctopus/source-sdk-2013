@@ -1,12 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose:
-//
-//=============================================================================//
-
 #ifndef AI_PLAYERALLY_H
 #define AI_PLAYERALLY_H
-
 #include "utlmap.h"
 #include "simtimer.h"
 #include "AI_Criteria.h"
@@ -20,12 +14,9 @@
 #undef MINMAX_H
 #include "minmax.h"
 #endif
-
 #if defined( _WIN32 )
 #pragma once
 #endif
-
-//-----------------------------------------------------------------------------
 
 #define TLK_ANSWER 			"TLK_ANSWER"
 #define TLK_ANSWER_HELLO	"TLK_ANSWER_HELLO"
@@ -34,6 +25,7 @@
 #define TLK_STARE 			"TLK_STARE"
 #define TLK_LOOK 			"TLK_LOOK"	// player looking at player for a second
 #define TLK_USE				"TLK_USE"
+#define TLK_PDUSE				"TLK_PDUSE"
 #define TLK_STARTFOLLOW 	"TLK_STARTFOLLOW"
 #define TLK_STOPFOLLOW		"TLK_STOPFOLLOW"
 #define TLK_JOINPLAYER		"TLK_JOINPLAYER"
@@ -100,6 +92,7 @@
 #define TLK_SPOTTED_HEADCRAB_LEAVING_ZOMBIE	"TLK_SPOTTED_HEADCRAB_LEAVING_ZOMBIE"
 #define TLK_DANGER_ZOMBINE_GRENADE			"TLK_DANGER_ZOMBINE_GRENADE"
 #define TLK_BALLSOCKETED					"TLK_BALLSOCKETED"
+#define TLK_ENEMYSPOTTED					"TLK_ENEMYSPOTTED"
 
 // Vehicle passenger
 #define	TLK_PASSENGER_WARN_COLLISION	"TLK_PASSENGER_WARN_COLLISION"	// About to collide with something
@@ -141,35 +134,23 @@
 #define TLK_REFINDENEMY	"TLK_REFINDENEMY"	// Found a previously eluded enemy
 #endif
 
-//-----------------------------------------------------------------------------
-
 #define TALKRANGE_MIN 500.0				// don't talk to anyone farther away than this
-
-//-----------------------------------------------------------------------------
-
 #define TALKER_STARE_DIST	128				// anyone closer than this and looking at me is probably staring at me.
-
 #define TALKER_DEFER_IDLE_SPEAK_MIN		10
 #define TALKER_DEFER_IDLE_SPEAK_MAX		20
-
-//-----------------------------------------------------------------------------
 
 class CAI_PlayerAlly;
 
 //-----------------------------------------------------------------------------
-//
 // CLASS: CAI_AllySpeechManager
-//
-//-----------------------------------------------------------------------------
-
 enum ConceptCategory_t
 {
 	SPEECH_IDLE,
 	SPEECH_IMPORTANT,
 	SPEECH_PRIORITY,
-
 	SPEECH_NUM_CATEGORIES
 };
+//-----------------------------------------------------------------------------
 
 struct ConceptCategoryInfo_t
 {
@@ -202,8 +183,6 @@ struct ConceptInfo_t
 	int 				flags;
 };
 
-//-------------------------------------
-
 class CAI_AllySpeechManager : public CLogicalEntity
 {
 	DECLARE_CLASS( CAI_AllySpeechManager, CLogicalEntity );
@@ -223,7 +202,6 @@ public:
 	bool ConceptDelayExpired( AIConcept_t concept );
 
 private:
-
 	CSimpleSimTimer	m_ConceptCategoryTimers[SPEECH_NUM_CATEGORIES];
 
 	CUtlMap<string_t, CSimpleSimTimer, char> m_ConceptTimers;
@@ -234,16 +212,10 @@ private:
 	DECLARE_DATADESC();
 };
 
-//-------------------------------------
-
 CAI_AllySpeechManager *GetAllySpeechManager();
 
 //-----------------------------------------------------------------------------
-//
 // CLASS: CAI_PlayerAlly
-//
-//-----------------------------------------------------------------------------
-
 class CAI_AllySpeechManager;
 
 enum AISpeechTargetSearchFlags_t
@@ -284,21 +256,18 @@ struct AISpeechSelection_t
 #endif
 };
 
-//-------------------------------------
-
 class CAI_PlayerAlly : public CAI_BaseActor
 {
 	DECLARE_CLASS( CAI_PlayerAlly, CAI_BaseActor );
 
 public:
-	//---------------------------------
-
 	int			ObjectCaps( void ) { return UsableNPCObjectCaps(BaseClass::ObjectCaps()); }
 	void		TalkInit( void );				
 
+	bool m_bIsFollowing;
+
 	//---------------------------------
 	// Behavior
-	//---------------------------------
 	void		GatherConditions( void );
 	void		GatherEnemyConditions( CBaseEntity *pEnemy );
 	void		OnStateChange( NPC_STATE OldState, NPC_STATE NewState );
@@ -314,6 +283,7 @@ public:
 	void		TaskFail( const char *pszGeneralFailText )	{ BaseClass::TaskFail( pszGeneralFailText ); }
 	void		ClearTransientConditions();
 	void		Touch(	CBaseEntity *pOther );
+	//---------------------------------
 
 #ifdef MAPBASE
 	virtual bool		CanFlinch( void );
@@ -321,8 +291,8 @@ public:
 
 	//---------------------------------
 	// Combat
-	//---------------------------------
 	void		OnKilledNPC( CBaseCombatCharacter *pKilled );
+	//---------------------------------
 
 #ifdef MAPBASE
 	void		OnEnemyRangeAttackedMe( CBaseEntity *pEnemy, const Vector &vecDir, const Vector &vecEnd );
@@ -330,13 +300,11 @@ public:
 
 	//---------------------------------
 	// Damage handling
-	//---------------------------------
 	void		TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 	int			OnTakeDamage_Alive( const CTakeDamageInfo &info );
 	int			TakeHealth( float flHealth, int bitsDamageType );
 	void		Event_Killed( const CTakeDamageInfo &info );
 	bool		CreateVPhysics();
-
 	//---------------------------------
 
 	virtual void PainSound( const CTakeDamageInfo &info );
@@ -348,13 +316,10 @@ public:
 
 	//---------------------------------
 	// Speech & Acting
-	//---------------------------------
 	CBaseEntity	*EyeLookTarget( void );		// Override to look at talk target
 	CBaseEntity	*FindNamedEntity( const char *pszName, IEntityFindFilter *pFilter = NULL );
-
 	CBaseEntity *FindSpeechTarget( int flags );
 	virtual bool IsValidSpeechTarget( int flags, CBaseEntity *pEntity );
-	
 	CBaseEntity *GetSpeechTarget()								{ return m_hTalkTarget.Get(); }
 	void		SetSpeechTarget( CBaseEntity *pSpeechTarget ) 	{ m_hTalkTarget = pSpeechTarget; }
 
@@ -366,7 +331,6 @@ public:
 	
 	void		SetSpeechFilter( CAI_SpeechFilter *pFilter )	{ m_hSpeechFilter = pFilter; }
 	CAI_SpeechFilter *GetSpeechFilter( void )					{ return m_hSpeechFilter; }
-
 	//---------------------------------
 	
 	virtual bool SelectIdleSpeech( AISpeechSelection_t *pSelection );
@@ -375,39 +339,21 @@ public:
 	virtual bool SelectInterjection();
 	virtual bool SelectPlayerUseSpeech();
 
-	//---------------------------------
-
 	virtual bool SelectQuestionAndAnswerSpeech( AISpeechSelection_t *pSelection );
 	virtual void PostSpeakDispatchResponse( AIConcept_t concept, AI_Response *response );
 	bool		 SelectQuestionFriend( CBaseEntity *pFriend, AISpeechSelection_t *pSelection );
 	bool		 SelectAnswerFriend( CBaseEntity *pFriend, AISpeechSelection_t *pSelection, bool bRespondingToHello );
-
-	//---------------------------------
-
 	bool 		SelectSpeechResponse( AIConcept_t concept, const char *pszModifiers, CBaseEntity *pTarget, AISpeechSelection_t *pSelection );
 	void		SetPendingSpeech( AIConcept_t concept, AI_Response *pResponse );
 	void 		ClearPendingSpeech();
 	bool		HasPendingSpeech()	{ return !m_PendingConcept.empty(); }
-
-	//---------------------------------
-	
 	bool		CanPlaySentence( bool fDisregardState );
 	int			PlayScriptedSentence( const char *pszSentence, float delay, float volume, soundlevel_t soundlevel, bool bConcurrent, CBaseEntity *pListener );
-
-	//---------------------------------
-	
 	void		DeferAllIdleSpeech( float flDelay = -1, CAI_BaseNPC *pIgnore = NULL );
-
-	//---------------------------------
-	
 	bool		IsOkToSpeak( ConceptCategory_t category, bool fRespondingToPlayer = false );
-	
-	//---------------------------------
-	
 	bool		IsOkToSpeak( void );
 	bool		IsOkToCombatSpeak( void );
 	bool		IsOkToSpeakInResponseToPlayer( void );
-	
 	bool		ShouldSpeakRandom( AIConcept_t concept, int iChance );
 	bool		IsAllowedToSpeak( AIConcept_t concept, bool bRespondingToPlayer = false );
 #ifdef MAPBASE
@@ -418,16 +364,12 @@ public:
 	virtual bool SpeakIfAllowed( AIConcept_t concept, AI_CriteriaSet& modifiers, bool bRespondingToPlayer = false, char *pszOutResponseChosen = NULL, size_t bufsize = 0 );
 #endif
 	void		ModifyOrAppendCriteria( AI_CriteriaSet& set );
-
-	//---------------------------------
-	
 	float		GetTimePlayerStaring()		{ return ( m_flTimePlayerStartStare != 0 ) ? gpGlobals->curtime - m_flTimePlayerStartStare : 0; }
 
 	//---------------------------------
 	// NPC Event Response System
 	virtual bool CanRespondToEvent( const char *ResponseConcept );
 	virtual bool RespondedTo( const char *ResponseConcept, bool bForce, bool bCancelScene );
-
 	//---------------------------------
 
 	void		OnSpokeConcept( AIConcept_t concept, AI_Response *response );
@@ -461,6 +403,7 @@ protected:
 #endif
 
 	inline bool CanSpeakWhileScripting();
+	inline bool IsFollowing();
 
 	// Whether we are a vital ally (useful for wrting Classify() for classes that are only sometimes vital, 
 	// such as the Lone Vort in Ep2.) The usual means by which any other function should determine if a character
@@ -470,7 +413,6 @@ protected:
 
 	//-----------------------------------------------------
 	// Conditions, Schedules, Tasks
-	//-----------------------------------------------------
 	enum
 	{
 		SCHED_TALKER_SPEAK_PENDING_IDLE = BaseClass::NEXT_SCHEDULE,
@@ -486,6 +428,7 @@ protected:
 		COND_TALKER_PLAYER_STARING,
 		NEXT_CONDITION
 	};
+	//-----------------------------------------------------
 
 private:
 	void SetCategoryDelay( ConceptCategory_t category, float minDelay, float maxDelay = 0.0 )	{ m_ConceptCategoryTimers[category].Set( minDelay, maxDelay ); }
@@ -493,14 +436,10 @@ private:
 
 	friend class CAI_AllySpeechManager;
 
-	//---------------------------------
-	
 	AI_Response		m_PendingResponse;
 	std::string		m_PendingConcept;
 	float			m_TimePendingSet;
 
-	//---------------------------------
-	
 	EHANDLE			m_hTalkTarget;	// who to look at while talking
 	float			m_flNextRegenTime;
 	float			m_flTimePlayerStartStare;
@@ -508,12 +447,7 @@ private:
 	float			m_flNextIdleSpeechTime;
 	int				m_iQARandomNumber;
 
-	//---------------------------------
-
 	CSimpleSimTimer	m_ConceptCategoryTimers[3];
-	
-	//---------------------------------
-	
 	CHandle<CAI_SpeechFilter>	m_hSpeechFilter;
 
 	bool m_bGameEndAlly;
@@ -530,12 +464,13 @@ protected:
 	DEFINE_CUSTOM_AI;
 };
 
-
 bool CAI_PlayerAlly::CanSpeakWhileScripting()
 {
 	return m_bCanSpeakWhileScripting;
 }
 
-//-----------------------------------------------------------------------------
-
+bool CAI_PlayerAlly::IsFollowing()
+{
+	return m_bIsFollowing;
+}
 #endif // AI_PLAYERALLY_H

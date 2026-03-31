@@ -129,6 +129,7 @@ public:
 	Disposition_t	IRelationType( CBaseEntity *pTarget );
 	
 	bool			IsSilentSquadMember() const;
+	CBaseEntity		*FindNearestFriend(bool fPlayer);
 
 	//---------------------------------
 	// Behavior
@@ -309,8 +310,19 @@ public:
 	//---------------------------------
 	// Damage handling
 	//---------------------------------
-	int 			OnTakeDamage_Alive( const CTakeDamageInfo &info );
+	int 			OnTakeDamage_Alive(const CTakeDamageInfo& inputInfo);
 	void 			OnFriendDamaged( CBaseCombatCharacter *pSquadmate, CBaseEntity *pAttacker );
+
+	//---------------------------------
+	// Friends/Following
+	//---------------------------------
+	virtual int		FriendNumber( int arrayNumber )	{ return arrayNumber; }
+	CBaseEntity		*EnumFriends( CBaseEntity *pentPrevious, int listNumber, bool bTrace );
+	void			ShutUpFriends( void );
+	void			AlertFriends( CBaseEntity *pKiller );
+	void			TellFriends(void);
+	void			StartFollowing(CBaseEntity *pLeader);
+	void			StopFollowing(void);
 
 	//---------------------------------
 	// Hints

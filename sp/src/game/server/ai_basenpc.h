@@ -2098,6 +2098,7 @@ public:
 	//---------------------------------
 	
 	virtual void		NotifyDeadFriend( CBaseEntity *pFriend ) { return; }
+	virtual void		NotifyFriend( CBaseEntity *pFriend ) { return; }
 
 	//---------------------------------
 	// Utility methods
